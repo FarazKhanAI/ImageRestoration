@@ -3,7 +3,7 @@ from pathlib import Path
 
 class Config:
     # Flask Configuration
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'imagerestoration924502@flaskapp'
+    SECRET_KEY = os.environ.get('SECRET_KEY') 
     
     # Upload Configuration
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size

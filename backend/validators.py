@@ -12,9 +12,6 @@ class ImageValidator:
     def validate_file(cls, file_stream, filename: str) -> Tuple[bool, Optional[str]]:
         """
         Validate uploaded file
-        
-        Returns:
-            Tuple of (is_valid, error_message)
         """
         # Check file extension
         file_ext = Path(filename).suffix.lower()
@@ -55,7 +52,7 @@ class ImageValidator:
         """Safely convert value to integer"""
         try:
             if isinstance(value, str):
-                result = int(float(value))  # Handle cases like '30.0'
+                result = int(float(value))
             else:
                 result = int(value)
             
@@ -87,19 +84,13 @@ class ImageValidator:
     @classmethod
     def validate_processing_parameters(cls, params: dict) -> Tuple[bool, Optional[str]]:
         """
-        Validate image processing parameters
-        
-        Args:
-            params: Dictionary of processing parameters
-        
-        Returns:
-            Tuple of (is_valid, error_message)
+        Validate image processing parameters with new enhancements
         """
         try:
             # Create converted parameters dict
             converted_params = {}
             
-            # Convert and validate each parameter
+            # Basic enhancements
             converted_params['brightness'] = cls._convert_to_int(
                 params.get('brightness', 0), 0, -100, 100
             )
@@ -136,7 +127,20 @@ class ImageValidator:
                 params.get('gamma', 1.0), 1.0, 0.1, 3.0
             )
             
-            # Boolean parameter
+            # New parameters for advanced features
+            converted_params['temperature'] = cls._convert_to_int(
+                params.get('temperature', 0), 0, -100, 100
+            )
+            
+            converted_params['tint'] = cls._convert_to_int(
+                params.get('tint', 0), 0, -50, 50
+            )
+            
+            converted_params['quality'] = cls._convert_to_int(
+                params.get('quality', 90), 90, 10, 100
+            )
+            
+            # Boolean parameters
             auto_wb = params.get('auto_white_balance', False)
             if isinstance(auto_wb, str):
                 converted_params['auto_white_balance'] = auto_wb.lower() in ['true', '1', 'yes', 'on']
@@ -144,7 +148,10 @@ class ImageValidator:
                 converted_params['auto_white_balance'] = bool(auto_wb)
             
             # String parameter
-            converted_params['inpainting_method'] = str(params.get('inpainting_method', 'telea'))
+            inpainting_method = str(params.get('inpainting_method', 'auto')).lower()
+            if inpainting_method not in ['auto', 'telea', 'ns', 'patch', 'multiscale']:
+                inpainting_method = 'auto'
+            converted_params['inpainting_method'] = inpainting_method
             
             # Update original params with converted values
             params.clear()
