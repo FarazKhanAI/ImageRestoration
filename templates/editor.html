@@ -1,0 +1,738 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Image - Image Restoration Studio{% endblock %}
+{% block subtitle %}Mark damaged areas and adjust restoration settings{% endblock %}
+
+{% block content %}
+{% set show_back_button = true %}
+{% set back_url = url_for('back') %}
+{% block head %}
+<meta name="image-url" content="{{ image_url }}">
+{% endblock %}
+
+<div class="editor-page">
+    <div class="editor-container">
+        <!-- Canvas Section -->
+        <div class="canvas-section">
+            <div class="section-header">
+                <h2><i class="fas fa-edit"></i> Mark Damage Areas</h2>
+                <div class="session-info">
+                    <span class="session-id">Session: {{ session_id }}</span>
+                    <span class="filename">{{ filename }}</span>
+                </div>
+            </div>
+            
+            <!-- Brush Controls -->
+            <div class="brush-controls-panel">
+                <div class="brush-control-group">
+                    <div class="brush-control">
+                        <label for="brushSize">
+                            <i class="fas fa-paint-brush"></i> Brush Size:
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="brushSize" min="5" max="100" value="20" class="brush-slider">
+                            <div class="slider-value">
+                                <span id="brushSizeValue">20</span> px
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="canvas-actions">
+                        <button id="undoBtn" class="btn btn-secondary" title="Undo last stroke">
+                            <i class="fas fa-undo"></i> Undo
+                        </button>
+                        <button id="clearBtn" class="btn btn-secondary" title="Clear all marks">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                        <button id="zoomInBtn" class="btn btn-icon" title="Zoom in">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button id="zoomOutBtn" class="btn btn-icon" title="Zoom out">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <button id="resetZoomBtn" class="btn btn-icon" title="Reset zoom">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Canvas Container -->
+            <div class="canvas-container" id="canvasContainer">
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <div class="canvas-center">
+                        <canvas id="imageCanvas"></canvas>
+                        <canvas id="maskCanvas"></canvas>
+                    </div>
+                </div>
+                
+                <div class="canvas-overlay">
+                    <div class="canvas-instructions">
+                        <div class="instruction-item">
+                            <i class="fas fa-mouse-pointer"></i>
+                            <span>Click & drag to mark damaged areas</span>
+                        </div>
+                        <div class="instruction-item">
+                            <i class="fas fa-arrows-alt"></i>
+                            <span>Scroll to zoom in/out</span>
+                        </div>
+                        <div class="instruction-item">
+                            <i class="fas fa-undo"></i>
+                            <span>Press Ctrl+Z to undo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="canvas-stats">
+                <div class="stat">
+                    <i class="fas fa-brush"></i>
+                    <span>Brush Size: <span id="currentBrushSize">20</span>px</span>
+                </div>
+                <div class="stat">
+                    <i class="fas fa-draw-polygon"></i>
+                    <span>Strokes: <span id="strokeCount">0</span></span>
+                </div>
+                <div class="stat">
+                    <i class="fas fa-expand-alt"></i>
+                    <span>Zoom: <span id="zoomLevel">100</span>%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Section -->
+        <div class="settings-section">
+            <div class="section-header">
+                <h2><i class="fas fa-cogs"></i> Restoration Settings</h2>
+                <p class="section-subtitle">Adjust parameters for optimal restoration</p>
+            </div>
+            
+            <!-- Method Selection -->
+            <div class="method-selection-group">
+                <h3><i class="fas fa-tools"></i> Inpainting Method</h3>
+                <div class="method-options">
+                    <div class="method-option">
+                        <input type="radio" id="methodTelea" name="inpainting_method" value="telea" checked>
+                        <label for="methodTelea">
+                            <div class="method-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="method-content">
+                                <h4>Fast (Telea)</h4>
+                                <p>Quick restoration for small damages</p>
+                                <div class="method-badge speed">Fast</div>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="method-option">
+                        <input type="radio" id="methodNS" name="inpainting_method" value="ns">
+                        <label for="methodNS">
+                            <div class="method-icon">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <div class="method-content">
+                                <h4>Quality (Navier-Stokes)</h4>
+                                <p>Better for textures and medium damage</p>
+                                <div class="method-badge quality">Quality</div>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="method-option">
+                        <input type="radio" id="methodHybrid" name="inpainting_method" value="hybrid">
+                        <label for="methodHybrid">
+                            <div class="method-icon">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="method-content">
+                                <h4>Hybrid</h4>
+                                <p>Best overall results (Recommended)</p>
+                                <div class="method-badge recommended">Best</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Slider Controls -->
+            <div class="slider-controls-group">
+                <div class="slider-control">
+                    <div class="slider-header">
+                        <label for="inpaintingRadius">
+                            <i class="fas fa-expand-alt"></i> Inpainting Radius
+                        </label>
+                        <span id="inpaintingRadiusValue" class="slider-value-display">3</span>
+                    </div>
+                    <input type="range" id="inpaintingRadius" min="1" max="20" value="3" class="styled-slider">
+                    <div class="slider-legend">
+                        <span>Soft</span>
+                        <span>Medium</span>
+                        <span>Strong</span>
+                    </div>
+                </div>
+                
+                <div class="slider-control">
+                    <div class="slider-header">
+                        <label for="gamma">
+                            <i class="fas fa-sun"></i> Gamma Correction
+                        </label>
+                        <span id="gammaValue" class="slider-value-display">1.00</span>
+                    </div>
+                    <input type="range" id="gamma" min="0.1" max="3.0" step="0.1" value="1.0" class="styled-slider">
+                    <div class="slider-legend">
+                        <span>Dark</span>
+                        <span>Normal</span>
+                        <span>Bright</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Process Button -->
+            <div class="process-section">
+                <button id="processBtn" class="btn btn-process">
+                    <i class="fas fa-cogs"></i>
+                    <div class="btn-content">
+                        <span class="btn-title">Process & Restore Image</span>
+                        <span class="btn-subtitle">Estimated time: 2-10 seconds</span>
+                    </div>
+                </button>
+                
+                <div class="process-info">
+                    <div class="info-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="info-content">
+                        <p>Processing time depends on image size and marked areas</p>
+                        <p class="small">Mark only the damaged areas for faster processing</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+
+<style>
+.editor-page {
+    padding: 20px 0;
+}
+
+.editor-container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h2 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.session-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.session-id {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.filename {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.section-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-top: 5px;
+}
+
+/* Canvas Section */
+.canvas-section {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.brush-controls-panel {
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.brush-control-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.brush-control {
+    flex: 1;
+}
+
+.brush-control label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.brush-slider {
+    flex: 1;
+    width: 150px;
+}
+
+.slider-value {
+    min-width: 60px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+.canvas-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Canvas Container */
+.canvas-container {
+    position: relative;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.canvas-wrapper {
+    position: relative;
+    max-width: 100%;
+    max-height: 600px;
+}
+
+.canvas-center {
+    position: relative;
+    display: inline-block;
+}
+
+#imageCanvas,
+#maskCanvas {
+    display: block;
+    max-width: 100%;
+    max-height: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+#maskCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.canvas-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.canvas-instructions {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    display: flex;
+    gap: 25px;
+    backdrop-filter: blur(10px);
+}
+
+.instruction-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.canvas-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 15px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-secondary);
+}
+
+.stat i {
+    color: var(--accent-color);
+}
+
+/* Settings Section */
+.settings-section {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.method-selection-group {
+    margin-bottom: 30px;
+}
+
+.method-selection-group h3 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.method-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.method-option input[type="radio"] {
+    display: none;
+}
+
+.method-option label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.method-option input:checked + label {
+    border-color: var(--accent-color);
+    background: var(--bg-secondary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.method-icon {
+    width: 45px;
+    height: 45px;
+    background: var(--primary-gradient);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.method-content {
+    flex: 1;
+}
+
+.method-content h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.method-content p {
+    margin: 5px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.method-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.method-badge.speed {
+    background: rgba(34, 197, 94, 0.1);
+    color: #10b981;
+}
+
+.method-badge.quality {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.method-badge.recommended {
+    background: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+}
+
+/* Slider Controls */
+.slider-controls-group {
+    margin-bottom: 30px;
+}
+
+.slider-control {
+    margin-bottom: 25px;
+}
+
+.slider-control:last-child {
+    margin-bottom: 0;
+}
+
+.slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.slider-header label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.slider-value-display {
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.styled-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--border-color);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.styled-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.slider-legend {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Process Section */
+.process-section {
+    margin-top: 30px;
+}
+
+.btn-process {
+    width: 100%;
+    padding: 20px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.btn-process:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn-process i {
+    font-size: 1.5rem;
+}
+
+.btn-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.btn-title {
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.btn-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-top: 3px;
+}
+
+.process-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+}
+
+.info-icon {
+    color: var(--accent-color);
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+
+.info-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.info-content .small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .editor-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .settings-section {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .editor-container {
+        gap: 20px;
+    }
+    
+    .canvas-section,
+    .settings-section {
+        padding: 20px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .session-info {
+        align-items: flex-start;
+    }
+    
+    .brush-control-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .canvas-actions {
+        justify-content: center;
+    }
+    
+    .canvas-instructions {
+        flex-direction: column;
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .canvas-stats {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .method-option label {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .method-icon {
+        align-self: center;
+    }
+}
+</style>
+{% endblock %}

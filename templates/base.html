@@ -3,34 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Restoration App - Restore & Enhance Old Photos</title>
+    <title>{% block title %}Image Restoration Studio{% endblock %}</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
     
-    <!-- Font Awesome for icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     {% block head %}{% endblock %}
+    
+    <style>
+        /* Page transition animation */
+        .page-transition {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
-<body>
+<body class="light-mode">
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content">
             <div class="spinner"></div>
-            <h3>Processing Image...</h3>
-            <p>This may take a few seconds</p>
+            <h3>Processing...</h3>
+            <p>Please wait</p>
         </div>
     </div>
     
-    <div class="container">
-        <!-- Header -->
+    <div class="container page-transition">
+        <!-- Header with Back Button -->
         <header class="header">
-            <h1><i class="fas fa-image"></i> Image Restoration Studio</h1>
-            <p>Restore old photos, remove scratches, and enhance image quality</p>
+            <div class="header-left">
+                {% if show_back_button is defined and show_back_button %}
+                <a href="{{ back_url }}" class="back-button" title="Go back">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back</span>
+                </a>
+                {% endif %}
+                <div class="logo">
+                    <h1><i class="fas fa-image"></i> Image Restoration Studio</h1>
+                    <p>{% block subtitle %}Restore old photos, remove scratches, and enhance image quality{% endblock %}</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
+                    <i class="fas fa-moon"></i>
+                    <span class="theme-text">Dark Mode</span>
+                </button>
+            </div>
         </header>
         
         <!-- Main Content -->
@@ -46,7 +76,7 @@
     </div>
     
     <!-- JavaScript -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     
     {% block scripts %}{% endblock %}
 </body>

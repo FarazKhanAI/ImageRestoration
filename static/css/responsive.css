@@ -1,0 +1,503 @@
+/* Responsive Design for Image Restoration App */
+
+/* Extra Large Screens */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1320px;
+    }
+    
+    .editor-container {
+        max-width: 1300px;
+    }
+}
+
+/* Large Screens */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 1140px;
+        padding: 15px;
+    }
+    
+    .editor-container {
+        max-width: 100%;
+    }
+    
+    .canvas-wrapper {
+        max-height: 550px;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        max-height: 550px;
+    }
+}
+
+/* Medium Screens */
+@media (max-width: 992px) {
+    .container {
+        max-width: 960px;
+        padding: 15px;
+    }
+    
+    .header-left h1 {
+        font-size: 2.2rem;
+    }
+    
+    .upload-section {
+        padding: 30px;
+    }
+    
+    .upload-area {
+        padding: 40px 20px;
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+    }
+    
+    .canvas-wrapper {
+        max-height: 500px;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        max-height: 500px;
+    }
+    
+    .method-selection {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .method-option {
+        width: 100%;
+    }
+}
+
+/* Small Screens */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .header-left h1 {
+        font-size: 1.8rem;
+    }
+    
+    .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .upload-section {
+        padding: 20px;
+    }
+    
+    .upload-area {
+        padding: 30px 15px;
+        margin: 20px auto;
+    }
+    
+    .upload-icon {
+        font-size: 2.5rem;
+    }
+    
+    .upload-area h3 {
+        font-size: 1.5rem;
+    }
+    
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .feature {
+        padding: 15px;
+    }
+    
+    .editor-section {
+        padding: 15px;
+    }
+    
+    .canvas-section,
+    .settings-section {
+        padding: 20px;
+    }
+    
+    .canvas-header h2,
+    .settings-container h2 {
+        font-size: 1.3rem;
+    }
+    
+    .brush-controls-group {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .brush-control {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .canvas-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .canvas-wrapper-container {
+        padding: 15px;
+        min-height: 350px;
+    }
+    
+    .canvas-wrapper {
+        max-height: 400px;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        max-height: 400px;
+    }
+    
+    .slider-group {
+        gap: 15px;
+    }
+    
+    .slider-control label {
+        font-size: 0.9rem;
+    }
+    
+    .btn-process {
+        padding: 15px;
+        font-size: 1.1rem;
+    }
+    
+    .results-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .image-container {
+        gap: 20px;
+    }
+    
+    .image-card {
+        border-radius: 12px;
+    }
+    
+    .image-header {
+        padding: 15px;
+    }
+    
+    .image-display {
+        padding: 15px;
+        min-height: 250px;
+    }
+    
+    .result-image {
+        max-height: 350px;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .metric-card {
+        padding: 15px;
+    }
+    
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .metric-content .value {
+        font-size: 1.5rem;
+    }
+    
+    .action-section {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+}
+
+/* Extra Small Screens */
+@media (max-width: 576px) {
+    .header-left h1 {
+        font-size: 1.6rem;
+    }
+    
+    .header-left p {
+        font-size: 1rem;
+    }
+    
+    .upload-area h3 {
+        font-size: 1.3rem;
+    }
+    
+    .upload-area p {
+        font-size: 0.9rem;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .feature {
+        padding: 12px;
+    }
+    
+    .feature i {
+        font-size: 2rem;
+    }
+    
+    .feature h4 {
+        font-size: 1.1rem;
+    }
+    
+    .feature p {
+        font-size: 0.85rem;
+    }
+    
+    .canvas-section,
+    .settings-section {
+        padding: 15px;
+        border-radius: 15px;
+    }
+    
+    .canvas-header h2,
+    .settings-container h2 {
+        font-size: 1.2rem;
+    }
+    
+    .canvas-wrapper-container {
+        padding: 10px;
+        min-height: 300px;
+    }
+    
+    .canvas-wrapper {
+        max-height: 350px;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        max-height: 350px;
+    }
+    
+    .method-info h4 {
+        font-size: 0.95rem;
+    }
+    
+    .method-info p {
+        font-size: 0.8rem;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-card {
+        padding: 12px;
+    }
+    
+    .results-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+}
+
+/* Very Small Screens */
+@media (max-width: 400px) {
+    .container {
+        padding: 8px;
+    }
+    
+    .header {
+        padding: 15px;
+        border-radius: 12px;
+    }
+    
+    .header-left h1 {
+        font-size: 1.4rem;
+    }
+    
+    .upload-section {
+        padding: 15px;
+    }
+    
+    .upload-area {
+        padding: 20px 10px;
+    }
+    
+    .upload-icon {
+        font-size: 2rem;
+    }
+    
+    .canvas-wrapper-container {
+        min-height: 250px;
+    }
+    
+    .canvas-wrapper {
+        max-height: 300px;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        max-height: 300px;
+    }
+    
+    .brush-control label {
+        font-size: 0.9rem;
+    }
+    
+    .brush-slider {
+        width: 60px;
+    }
+    
+    .btn-icon {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .method-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .slider-control label {
+        font-size: 0.85rem;
+    }
+    
+    .slider-control .value {
+        font-size: 1rem;
+    }
+    
+    .btn-process {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    .btn-subtext {
+        font-size: 0.8rem;
+    }
+}
+
+/* Landscape Orientation for Mobile */
+@media (max-height: 600px) and (orientation: landscape) {
+    .upload-area {
+        padding: 20px;
+        margin: 10px auto;
+    }
+    
+    .canvas-wrapper-container {
+        min-height: 250px;
+    }
+    
+    .canvas-wrapper {
+        max-height: 250px;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        max-height: 250px;
+    }
+    
+    .features-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    
+    .feature {
+        padding: 10px;
+    }
+    
+    .feature i {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+    }
+    
+    .feature h4 {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    
+    .feature p {
+        font-size: 0.75rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .header-right,
+    .upload-section,
+    .canvas-header,
+    .settings-section,
+    .action-section button:not(#downloadBtn),
+    .canvas-overlay {
+        display: none !important;
+    }
+    
+    .main-content {
+        box-shadow: none;
+        border: none;
+    }
+    
+    .image-container {
+        break-inside: avoid;
+    }
+    
+    .results-section {
+        break-before: always;
+    }
+}
+
+/* High DPI Screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .btn,
+    .theme-toggle {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    #imageCanvas,
+    #maskCanvas {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .btn:hover,
+    .theme-toggle:hover,
+    .feature:hover,
+    .metric-card:hover {
+        transform: none !important;
+    }
+}

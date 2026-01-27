@@ -12,14 +12,19 @@ class ImageRestorationApp {
         this.lastX = 0;
         this.lastY = 0;
         this.maskData = [];
+        this.resizeTimeout = null;
+        this.selectedFile = null;
+        this.processedImageData = null;
+        this.processedFilename = null;
+        this.displayWidth = 0;
+        this.displayHeight = 0;
+        this.originalWidth = 0;
+        this.originalHeight = 0;
+        this.imageAspectRatio = 1;
+        this.canvasScale = 1;
+        
+        // Updated processing parameters (only essentials)
         this.processingParams = {
-            brightness: 0,
-            contrast: 0,
-            sharpness: 0,
-            saturation: 100,
-            noise_reduction: 0,
-            detail_enhancement: 0,
-            auto_white_balance: false,
             gamma: 1.0,
             inpainting_method: 'telea',
             inpainting_radius: 3,
@@ -58,26 +63,14 @@ class ImageRestorationApp {
             improvementValue: document.getElementById('improvementValue')
         };
         
-        // Get all slider inputs
+        // Get slider inputs (only the ones that exist now)
         this.sliders = {
-            brightness: document.getElementById('brightness'),
-            contrast: document.getElementById('contrast'),
-            sharpness: document.getElementById('sharpness'),
-            saturation: document.getElementById('saturation'),
-            noiseReduction: document.getElementById('noiseReduction'),
-            detailEnhancement: document.getElementById('detailEnhancement'),
             gamma: document.getElementById('gamma'),
             inpaintingRadius: document.getElementById('inpaintingRadius')
         };
         
-        // Get all value displays
+        // Get value displays
         this.valueDisplays = {
-            brightness: document.getElementById('brightnessValue'),
-            contrast: document.getElementById('contrastValue'),
-            sharpness: document.getElementById('sharpnessValue'),
-            saturation: document.getElementById('saturationValue'),
-            noiseReduction: document.getElementById('noiseReductionValue'),
-            detailEnhancement: document.getElementById('detailEnhancementValue'),
             gamma: document.getElementById('gammaValue'),
             inpaintingRadius: document.getElementById('inpaintingRadiusValue')
         };
@@ -88,6 +81,9 @@ class ImageRestorationApp {
         
         // Set initial brush size display
         this.updateBrushSizeDisplay();
+        
+        // Initialize responsive canvas
+        this.initializeResponsiveCanvas();
     }
     
     bindEvents() {
@@ -146,6 +142,7 @@ class ImageRestorationApp {
         this.elements.brushSizeInput.addEventListener('input', (e) => {
             this.brushSize = parseInt(e.target.value);
             this.updateBrushSizeDisplay();
+            this.saveToLocalStorage();
         });
         
         // Mask controls
@@ -164,11 +161,6 @@ class ImageRestorationApp {
                 this.processingParams[key] = value;
                 this.updateValueDisplay(key, value);
                 this.saveToLocalStorage();
-                
-                // Preview enhancement for basic adjustments
-                if (['brightness', 'contrast', 'saturation'].includes(key)) {
-                    this.previewEnhancement(key, value);
-                }
             });
         }
         
@@ -180,16 +172,46 @@ class ImageRestorationApp {
             });
         });
         
-        // Auto white balance checkbox
-        document.getElementById('autoWhiteBalance').addEventListener('change', (e) => {
-            this.processingParams.auto_white_balance = e.target.checked;
-            this.saveToLocalStorage();
+        // Add resize handler for responsive canvas
+        window.addEventListener('resize', () => {
+            if (this.originalImage) {
+                // Debounce the resize handler
+                clearTimeout(this.resizeTimeout);
+                this.resizeTimeout = setTimeout(() => {
+                    this.displayImage(this.originalImage);
+                    this.redrawMask();
+                }, 250);
+            }
         });
         
         // Load saved parameters on page load
         window.addEventListener('load', () => {
             this.updateAllValueDisplays();
         });
+    }
+    
+    initializeResponsiveCanvas() {
+        // Create a ResizeObserver to handle canvas container size changes
+        if (typeof ResizeObserver !== 'undefined') {
+            const canvasWrapper = document.getElementById('canvasWrapper');
+            const resizeObserver = new ResizeObserver((entries) => {
+                for (let entry of entries) {
+                    if (this.originalImage && entry.target === canvasWrapper) {
+                        // Debounce the resize handler
+                        clearTimeout(this.resizeTimeout);
+                        this.resizeTimeout = setTimeout(() => {
+                            this.displayImage(this.originalImage);
+                            this.redrawMask();
+                        }, 250);
+                    }
+                }
+            });
+            
+            // Start observing the canvas wrapper
+            if (canvasWrapper) {
+                resizeObserver.observe(canvasWrapper);
+            }
+        }
     }
     
     handleFileSelect(file) {
@@ -222,8 +244,15 @@ class ImageRestorationApp {
                 
                 // Save file info for upload
                 this.selectedFile = file;
+                
+                // Initialize comparison slider
+                this.initializeComparisonSlider();
             };
             img.src = e.target.result;
+        };
+        reader.onerror = () => {
+            this.hideLoading();
+            alert('Error reading file. Please try again.');
         };
         reader.readAsDataURL(file);
     }
@@ -231,19 +260,36 @@ class ImageRestorationApp {
     displayImage(img) {
         const canvas = this.elements.imageCanvas;
         const maskCanvas = this.elements.maskCanvas;
+        const canvasWrapper = document.getElementById('canvasWrapper');
         
-        // Calculate dimensions to fit in container (max 800px width/height)
-        const maxWidth = 800;
-        const maxHeight = 600;
+        if (!canvasWrapper) {
+            console.error('Canvas wrapper not found');
+            return;
+        }
+        
+        // Get container dimensions
+        const containerWidth = canvasWrapper.clientWidth;
+        const containerHeight = canvasWrapper.clientHeight - 40; // Account for padding
+        
+        // Calculate image dimensions to fit within container while maintaining aspect ratio
+        const maxWidth = Math.min(containerWidth, 1200);
+        const maxHeight = Math.min(containerHeight, 600);
         
         let width = img.width;
         let height = img.height;
         
-        if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width = Math.floor(width * ratio);
-            height = Math.floor(height * ratio);
+        // Calculate scaling ratio
+        const scale = Math.min(maxWidth / width, maxHeight / height);
+        
+        // If image is larger than container, scale it down
+        if (scale < 1) {
+            width = Math.floor(width * scale);
+            height = Math.floor(height * scale);
         }
+        
+        // Ensure minimum dimensions
+        width = Math.max(width, 300);
+        height = Math.max(height, 200);
         
         // Set canvas dimensions
         canvas.width = width;
@@ -255,16 +301,35 @@ class ImageRestorationApp {
         this.imageCtx.clearRect(0, 0, width, height);
         this.maskCtx.clearRect(0, 0, width, height);
         
-        // Draw image
+        // Draw image with crisp edges
+        this.imageCtx.imageSmoothingEnabled = true;
+        this.imageCtx.imageSmoothingQuality = 'high';
         this.imageCtx.drawImage(img, 0, 0, width, height);
         
         // Store display dimensions for coordinate mapping
         this.displayWidth = width;
         this.displayHeight = height;
         this.imageAspectRatio = img.width / img.height;
+        this.canvasScale = scale;
+        
+        // Calculate centered position for canvas wrapper
+        const wrapper = document.querySelector('.canvas-center-container');
+        if (wrapper) {
+            wrapper.style.width = `${width}px`;
+            wrapper.style.height = `${height}px`;
+        }
+        
+        // Store original image dimensions for backend processing
+        this.originalWidth = img.width;
+        this.originalHeight = img.height;
         
         // Reset mask data
         this.maskData = [];
+        
+        // Update brush size based on canvas scale
+        this.brushSize = Math.max(10, 20 * scale);
+        this.elements.brushSizeInput.value = this.brushSize;
+        this.updateBrushSizeDisplay();
     }
     
     startDrawing(e) {
@@ -314,10 +379,30 @@ class ImageRestorationApp {
     getCanvasPosition(e) {
         const canvas = this.elements.imageCanvas;
         const rect = canvas.getBoundingClientRect();
+        const wrapper = document.querySelector('.canvas-center-container');
         
+        if (!wrapper) {
+            // Fallback to original calculation
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        
+        const wrapperRect = wrapper.getBoundingClientRect();
+        
+        // Calculate scale factor between canvas and display
+        const scaleX = canvas.width / wrapperRect.width;
+        const scaleY = canvas.height / wrapperRect.height;
+        
+        // Get position relative to wrapper (which is centered)
+        const x = (e.clientX - wrapperRect.left) * scaleX;
+        const y = (e.clientY - wrapperRect.top) * scaleY;
+        
+        // Clamp values to canvas bounds
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: Math.max(0, Math.min(x, canvas.width)),
+            y: Math.max(0, Math.min(y, canvas.height))
         };
     }
     
@@ -336,7 +421,6 @@ class ImageRestorationApp {
         if (this.maskData.length === 0) return;
         
         // Simple undo: clear and redraw all except last stroke
-        // In a production app, you'd want to implement a proper undo stack
         this.maskCtx.clearRect(0, 0, this.elements.maskCanvas.width, this.elements.maskCanvas.height);
         
         // Remove last stroke data (simplified)
@@ -387,14 +471,23 @@ class ImageRestorationApp {
                 const maskData = JSON.stringify({
                     coordinates: this.maskData,
                     brush_size: this.brushSize,
-                    image_width: this.displayWidth,
-                    image_height: this.displayHeight
+                    display_width: this.displayWidth,
+                    display_height: this.displayHeight,
+                    original_width: this.originalWidth,
+                    original_height: this.originalHeight
                 });
                 formData.append('mask_data', maskData);
             }
             
-            // Add processing parameters
-            formData.append('parameters', JSON.stringify(this.processingParams));
+            // Add processing parameters (simplified for new UI)
+            const params = {
+                inpainting_method: this.processingParams.inpainting_method,
+                inpainting_radius: this.processingParams.inpainting_radius,
+                gamma: this.processingParams.gamma,
+                brush_size: this.brushSize
+            };
+            
+            formData.append('parameters', JSON.stringify(params));
             
             // Send to server
             const response = await fetch('/process', {
@@ -425,10 +518,18 @@ class ImageRestorationApp {
         this.elements.processedImage.src = result.processed_image;
         
         // Display metrics
-        this.elements.processingTime.textContent = result.metrics.processing_time + 's';
-        this.elements.psnrValue.textContent = result.metrics.psnr;
-        this.elements.ssimValue.textContent = result.metrics.ssim;
-        this.elements.improvementValue.textContent = result.metrics.improvement;
+        if (result.metrics) {
+            this.elements.processingTime.textContent = result.metrics.processing_time + 's';
+            this.elements.psnrValue.textContent = result.metrics.psnr;
+            this.elements.ssimValue.textContent = result.metrics.ssim;
+            this.elements.improvementValue.textContent = result.metrics.improvement;
+        } else {
+            // Default values if metrics not provided
+            this.elements.processingTime.textContent = '0.0';
+            this.elements.psnrValue.textContent = '0.0';
+            this.elements.ssimValue.textContent = '0.0';
+            this.elements.improvementValue.textContent = '-';
+        }
         
         // Store processed image data for download
         this.processedImageData = result.processed_image;
@@ -437,41 +538,34 @@ class ImageRestorationApp {
         // Show results section
         this.elements.processingSection.style.display = 'none';
         this.elements.resultsSection.style.display = 'block';
+        
+        // Initialize comparison slider
+        this.initializeComparisonSlider();
     }
     
-    previewEnhancement(type, value) {
-        if (!this.originalImage) return;
+    initializeComparisonSlider() {
+        const slider = document.getElementById('comparisonSlider');
+        const originalImg = this.elements.originalImage;
+        const processedImg = this.elements.processedImage;
         
-        // Create a temporary canvas for preview
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
+        if (!slider || !originalImg || !processedImg) return;
         
-        tempCanvas.width = this.displayWidth;
-        tempCanvas.height = this.displayHeight;
+        slider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // Simple comparison effect
+            originalImg.style.opacity = (100 - value) / 100;
+            processedImg.style.opacity = value / 100;
+        });
         
-        // Apply enhancement (simplified client-side preview)
-        tempCtx.filter = this.getFilterForEnhancement(type, value);
-        tempCtx.drawImage(this.originalImage, 0, 0, this.displayWidth, this.displayHeight);
-        
-        // Draw mask on top
-        tempCtx.drawImage(this.elements.maskCanvas, 0, 0);
-        
-        // Update display
-        this.imageCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
-        this.imageCtx.drawImage(tempCanvas, 0, 0);
-    }
-    
-    getFilterForEnhancement(type, value) {
-        switch(type) {
-            case 'brightness':
-                return `brightness(${100 + value}%)`;
-            case 'contrast':
-                return `contrast(${100 + value}%)`;
-            case 'saturation':
-                return `saturate(${value}%)`;
-            default:
-                return 'none';
-        }
+        // Reset on slider release
+        slider.addEventListener('change', () => {
+            setTimeout(() => {
+                slider.value = 50;
+                originalImg.style.opacity = 1;
+                processedImg.style.opacity = 1;
+            }, 300);
+        });
     }
     
     switchToEditor() {
@@ -491,17 +585,30 @@ class ImageRestorationApp {
         this.selectedFile = null;
         this.originalImage = null;
         this.currentImage = null;
+        this.processedImageData = null;
+        this.processedFilename = null;
         
         // Clear canvases
-        this.imageCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
-        this.maskCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
+        if (this.displayWidth && this.displayHeight) {
+            this.imageCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
+            this.maskCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
+        }
         
         // Reset mask data
         this.maskData = [];
+        
+        // Reset comparison slider
+        const slider = document.getElementById('comparisonSlider');
+        if (slider) {
+            slider.value = 50;
+        }
     }
     
     downloadProcessedImage() {
-        if (!this.processedImageData) return;
+        if (!this.processedImageData) {
+            alert('No processed image available to download');
+            return;
+        }
         
         // Create a temporary link element
         const link = document.createElement('a');
@@ -562,16 +669,22 @@ class ImageRestorationApp {
                 this.updateAllValueDisplays();
                 
                 // Set radio buttons
-                document.querySelector(`input[name="inpainting_method"][value="${this.processingParams.inpainting_method}"]`).checked = true;
-                document.getElementById('autoWhiteBalance').checked = this.processingParams.auto_white_balance;
+                const radio = document.querySelector(`input[name="inpainting_method"][value="${this.processingParams.inpainting_method}"]`);
+                if (radio) {
+                    radio.checked = true;
+                }
                 
                 // Set slider values
                 for (const [key, slider] of Object.entries(this.sliders)) {
-                    slider.value = this.processingParams[key];
+                    if (slider && this.processingParams[key] !== undefined) {
+                        slider.value = this.processingParams[key];
+                    }
                 }
                 
             } catch (e) {
                 console.error('Error loading saved data:', e);
+                // Clear invalid data
+                localStorage.removeItem('imageRestorationApp');
             }
         }
     }

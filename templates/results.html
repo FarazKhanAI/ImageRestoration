@@ -1,0 +1,879 @@
+{% extends "base.html" %}
+
+{% block title %}Results - Image Restoration Studio{% endblock %}
+{% block subtitle %}Compare original and restored images{% endblock %}
+
+{% block content %}
+{% set show_back_button = true %}
+{% set back_url = url_for('back') %}
+
+<div class="results-page">
+    <div class="results-container">
+        <!-- Results Header -->
+        <div class="results-header">
+            <div class="success-message">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="success-content">
+                    <h1>Image Successfully Restored!</h1>
+                    <p class="subtitle">Your image has been processed and enhanced</p>
+                </div>
+            </div>
+            
+            <div class="session-info">
+                <span class="filename">{{ filename }}</span>
+                <span class="session-id">Session: {{ session_id }}</span>
+            </div>
+        </div>
+        
+        <!-- Image Comparison -->
+        <div class="comparison-section">
+            <div class="comparison-header">
+                <h2><i class="fas fa-columns"></i> Image Comparison</h2>
+                <div class="comparison-controls">
+                    <button id="toggleComparison" class="btn btn-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Toggle View</span>
+                    </button>
+                    <button id="fullscreenBtn" class="btn btn-icon">
+                        <i class="fas fa-expand"></i>
+                        <span>Fullscreen</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="comparison-container" id="comparisonContainer">
+                <div class="image-pair">
+                    <div class="image-card original">
+                        <div class="image-header">
+                            <h3><i class="fas fa-file-image"></i> Original Image</h3>
+                        </div>
+                        <div class="image-display">
+                            <img src="{{ original_url }}" alt="Original Image" id="originalImage" class="result-img">
+                        </div>
+                        <div class="image-footer">
+                            <span class="image-label">Before Restoration</span>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-divider">
+                        <div class="divider-icon">
+                            <i class="fas fa-arrows-alt-h"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="image-card restored">
+                        <div class="image-header">
+                            <h3><i class="fas fa-magic"></i> Restored Image</h3>
+                        </div>
+                        <div class="image-display">
+                            <img src="{{ result_url }}" alt="Restored Image" id="restoredImage" class="result-img">
+                        </div>
+                        <div class="image-footer">
+                            <span class="image-label">After Restoration</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comparison Slider -->
+                <div class="comparison-slider-container">
+                    <div class="slider-wrapper">
+                        <div class="slider-labels">
+                            <span>Original</span>
+                            <span>Restored</span>
+                        </div>
+                        <input type="range" id="comparisonSlider" min="0" max="100" value="50" class="comparison-slider">
+                        <div class="slider-track">
+                            <div class="slider-fill" id="sliderFill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quality Metrics -->
+        <div class="metrics-section">
+            <div class="metrics-header">
+                <h2><i class="fas fa-chart-line"></i> Quality Metrics</h2>
+                <p class="section-subtitle">Performance and quality indicators</p>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="processingTime">
+                            {{ metrics.get('processing_time', 0)|round(1) }}
+                        </div>
+                        <div class="metric-label">Processing Time</div>
+                        <div class="metric-unit">seconds</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-signal"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="psnrValue">
+                            {{ metrics.get('psnr', 0)|round(1) }}
+                        </div>
+                        <div class="metric-label">PSNR</div>
+                        <div class="metric-unit">dB (Higher is better)</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="ssimValue">
+                            {{ metrics.get('ssim', 0)|round(2) }}
+                        </div>
+                        <div class="metric-label">SSIM</div>
+                        <div class="metric-unit">0-1 scale</div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="fas fa-trend-up"></i>
+                    </div>
+                    <div class="metric-content">
+                        <div class="metric-value" id="improvementValue">
+                            {{ metrics.get('improvement', '-') }}
+                        </div>
+                        <div class="metric-label">Improvement</div>
+                        <div class="metric-unit">Quality gain</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-section">
+            <div class="action-buttons">
+                <a href="{{ url_for('download_image', filename=session['result_filename']) }}" class="btn btn-success">
+                    <i class="fas fa-download"></i>
+                    <span>Download Restored Image</span>
+                </a>
+                
+                <button id="newImageBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    <span>Process Another Image</span>
+                </button>
+                
+                <a href="{{ url_for('editor') }}" class="btn btn-secondary">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit Settings</span>
+                </a>
+            </div>
+            
+            <div class="action-info">
+                <div class="info-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Downloaded images are in high quality JPG format</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Uploaded files are automatically deleted after 24 hours</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+class ResultsPage {
+    constructor() {
+        this.originalImage = document.getElementById('originalImage');
+        this.restoredImage = document.getElementById('restoredImage');
+        this.comparisonSlider = document.getElementById('comparisonSlider');
+        this.sliderFill = document.getElementById('sliderFill');
+        this.comparisonContainer = document.getElementById('comparisonContainer');
+        this.loadingOverlay = document.getElementById('loadingOverlay');
+        this.currentMode = 'side-by-side';
+        
+        this.bindEvents();
+        this.initializeComparison();
+    }
+    
+    bindEvents() {
+        // Comparison slider
+        if (this.comparisonSlider) {
+            this.comparisonSlider.addEventListener('input', (e) => {
+                this.updateComparison(e.target.value);
+            });
+            
+            this.comparisonSlider.addEventListener('change', () => {
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    this.comparisonSlider.value = 50;
+                    this.updateComparison(50);
+                }, 2000);
+            });
+        }
+        
+        // Toggle comparison mode
+        const toggleBtn = document.getElementById('toggleComparison');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                this.toggleComparisonMode();
+            });
+        }
+        
+        // Fullscreen mode
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', () => {
+                this.toggleFullscreen();
+            });
+        }
+        
+        // New image button
+        const newImageBtn = document.getElementById('newImageBtn');
+        if (newImageBtn) {
+            newImageBtn.addEventListener('click', () => {
+                this.resetAndStartNew();
+            });
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Left/Right arrow keys for comparison slider
+            if (e.key === 'ArrowLeft' && this.comparisonSlider) {
+                e.preventDefault();
+                this.comparisonSlider.value = Math.max(0, this.comparisonSlider.value - 5);
+                this.updateComparison(this.comparisonSlider.value);
+            } else if (e.key === 'ArrowRight' && this.comparisonSlider) {
+                e.preventDefault();
+                this.comparisonSlider.value = Math.min(100, this.comparisonSlider.value + 5);
+                this.updateComparison(this.comparisonSlider.value);
+            }
+        });
+    }
+    
+    initializeComparison() {
+        // Initialize comparison slider fill
+        this.updateComparison(50);
+    }
+    
+    updateComparison(value) {
+        // Update slider fill
+        if (this.sliderFill) {
+            this.sliderFill.style.width = `${value}%`;
+        }
+        
+        // Update image opacity for comparison effect
+        if (this.originalImage && this.restoredImage) {
+            this.originalImage.style.opacity = (100 - value) / 100;
+            this.restoredImage.style.opacity = value / 100;
+        }
+    }
+    
+    toggleComparisonMode() {
+        const container = this.comparisonContainer;
+        const imagePair = container.querySelector('.image-pair');
+        
+        if (this.currentMode === 'side-by-side') {
+            // Switch to overlay mode
+            container.classList.add('overlay-mode');
+            imagePair.classList.add('overlay');
+            this.currentMode = 'overlay';
+        } else {
+            // Switch back to side-by-side
+            container.classList.remove('overlay-mode');
+            imagePair.classList.remove('overlay');
+            this.currentMode = 'side-by-side';
+        }
+    }
+    
+    toggleFullscreen() {
+        const container = this.comparisonContainer;
+        
+        if (!document.fullscreenElement) {
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+    
+    resetAndStartNew() {
+        this.showLoading('Starting new session...');
+        
+        // Redirect to reset endpoint
+        fetch('/reset')
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    window.location.href = '/';
+                }
+            })
+            .catch(error => {
+                console.error('Reset error:', error);
+                this.hideLoading();
+                window.location.href = '/';
+            });
+    }
+    
+    showLoading(message = 'Processing...') {
+        if (this.loadingOverlay) {
+            const messageEl = this.loadingOverlay.querySelector('h3');
+            if (messageEl && message) {
+                messageEl.textContent = message;
+            }
+            this.loadingOverlay.style.display = 'flex';
+        }
+    }
+    
+    hideLoading() {
+        if (this.loadingOverlay) {
+            this.loadingOverlay.style.display = 'none';
+        }
+    }
+}
+
+// Initialize results page when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.resultsPage = new ResultsPage();
+    
+    // Update slider on page load
+    const slider = document.getElementById('comparisonSlider');
+    if (slider) {
+        slider.value = 50;
+    }
+});
+</script>
+
+<style>
+.results-page {
+    padding: 20px 0;
+}
+
+.results-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.success-message {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #10b981, #34d399);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2.5rem;
+}
+
+.success-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.success-content .subtitle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.session-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.session-info .filename {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.session-info .session-id {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* Comparison Section */
+.comparison-section {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.comparison-header h2 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.comparison-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.comparison-container {
+    position: relative;
+}
+
+.image-pair {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 30px;
+    align-items: stretch;
+    margin-bottom: 30px;
+}
+
+.image-card {
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-color);
+}
+
+.image-header {
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.image-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.image-display {
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    background: var(--bg-primary);
+}
+
+.result-img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 8px;
+    transition: opacity 0.3s ease;
+}
+
+.image-footer {
+    padding: 15px 20px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.image-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.comparison-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.divider-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+/* Comparison Slider */
+.comparison-slider-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.slider-wrapper {
+    position: relative;
+    padding: 20px 0;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.slider-track {
+    position: relative;
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    margin: 0 10px;
+}
+
+.slider-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 50%;
+    background: var(--accent-color);
+    border-radius: 4px;
+    transition: width 0.1s ease;
+}
+
+.comparison-slider {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    transform: translateY(-50%);
+    opacity: 0;
+    cursor: pointer;
+    z-index: 10;
+}
+
+/* Overlay mode styles */
+.comparison-container.overlay-mode .image-pair {
+    position: relative;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+.comparison-container.overlay-mode .image-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.comparison-container.overlay-mode .image-card.original {
+    z-index: 1;
+}
+
+.comparison-container.overlay-mode .image-card.restored {
+    z-index: 2;
+    clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+}
+
+.comparison-container.overlay-mode .comparison-divider {
+    display: none;
+}
+
+/* Metrics Section */
+.metrics-section {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.metrics-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.metrics-header h2 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.section-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.metric-card {
+    background: var(--bg-tertiary);
+    border-radius: 16px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--accent-color);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-color);
+    font-size: 1.8rem;
+    flex-shrink: 0;
+}
+
+.metric-content {
+    flex: 1;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    line-height: 1;
+}
+
+.metric-label {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.metric-unit {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+/* Action Section */
+.action-section {
+    background: var(--card-bg);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.action-buttons .btn {
+    padding: 18px 35px;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 12px;
+    text-decoration: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.btn-secondary {
+    background: var(--secondary-gradient);
+    color: white;
+}
+
+.action-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.info-item i {
+    color: var(--accent-color);
+    flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .results-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    
+    .session-info {
+        align-items: flex-start;
+    }
+    
+    .image-pair {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .comparison-divider {
+        transform: rotate(90deg);
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .success-message {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .success-content h1 {
+        font-size: 2rem;
+    }
+    
+    .comparison-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .comparison-controls {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-card {
+        padding: 20px;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .results-container {
+        padding: 0 15px;
+    }
+    
+    .comparison-section,
+    .metrics-section,
+    .action-section {
+        padding: 20px;
+    }
+    
+    .image-display {
+        padding: 20px;
+        min-height: 300px;
+    }
+    
+    .result-img {
+        max-height: 300px;
+    }
+    
+    .metric-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .metric-icon {
+        align-self: center;
+    }
+}
+</style>
+{% endblock %}
