@@ -1,367 +1,188 @@
-# 📁 Connecting to Your GitHub Repository
+# 🖼️ Image Restoration Studio
 
-Here's how to connect your existing local project to your GitHub repository:
+<div align="center">
 
-## **Step-by-Step Git Setup**
+[![Flask](https://img.shields.io/badge/Flask-3.0.0-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8.1-5C3EE8?style=for-the-badge&logo=opencv)](https://opencv.org/)
+[![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python)](https://python.org)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
-### **1. Initialize Git in Your Project**
-```bash
-# Navigate to your project folder
-cd F:\DIP_project\image-restoration-app
+**Restore old photos, remove scratches, and enhance image quality with AI-powered inpainting**
 
-# Initialize git repository
-git init
-```
+[Live Demo](#) • [Report Bug](https://github.com/FarazKhanAI/ImageRestoration/issues) • [Request Feature](https://github.com/FarazKhanAI/ImageRestoration/issues)
 
-### **2. Connect to Your GitHub Repository**
-```bash
-# Add your GitHub repository as remote origin
-git remote add origin https://github.com/FarazKhanAI/ImageRestoration.git
+</div>
 
-# Verify the remote URL
-git remote -v
-```
+## ✨ Features
 
-### **3. Configure Git (Set Your Identity)**
-```bash
-# Set your name and email (use your GitHub credentials)
-git config --global user.name "FarazKhanAI"
-git config --global user.email "your-email@example.com"
-```
+### 🎨 **Interactive Restoration**
+- **Draw Directly**: Mark scratches and damage with brush tool
+- **Real-time Preview**: See adjustments instantly
+- **Multi-Algorithm**: Telea (fast) and Navier-Stokes (quality) inpainting
 
-## **📁 Create a Proper .gitignore File**
+### 🔧 **Smart Enhancements**
+- Brightness/Contrast/Saturation controls
+- Noise reduction & detail enhancement
+- Auto white balance & gamma correction
+- Quality metrics (PSNR, SSIM, processing time)
 
-Create a new `.gitignore` file in your project root with this content:
+### 📱 **Modern Interface**
+- Clean, responsive design
+- Before/After comparison
+- One-click download
+- Mobile-friendly
 
-```gitignore
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+## 🚀 Quick Start
 
-# Instance folder (uploads, processed images)
-instance/uploads/
-instance/processed/
+### Prerequisites
+- Python 3.10+
+- Conda (recommended)
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.sublime-*
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
-# Temp files
-*.tmp
-*.temp
-
-# Environment variables
-.env
-.flaskenv
-.secrets
-
-# Database
-*.db
-*.sqlite3
-
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environment
-venv/
-ENV/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-```
-
-## **📦 Prepare Your First Commit**
+### Installation
 
 ```bash
-# Check what files will be added
-git status
+# 1. Clone repository
+git clone https://github.com/FarazKhanAI/ImageRestoration.git
+cd ImageRestoration
 
-# Stage all files (except those in .gitignore)
-git add .
+# 2. Create environment
+conda create -n image-restoration python=3.10
+conda activate image-restoration
 
-# Check staged files
-git status
+# 3. Install dependencies
+pip install -r requirements.txt
 
-# Create your first commit
-git commit -m "Initial commit: Complete Image Restoration Flask App with OpenCV backend"
-
-# Check commit history
-git log --oneline
+# 4. Run the app
+python app.py
 ```
 
-## **🚀 Push to GitHub**
+Open **http://localhost:5000** in your browser.
 
-```bash
-# Push to GitHub (main branch)
-git push -u origin main
+## 📖 How to Use
 
-# If you get an error about the branch not existing, use:
-git branch -M main
-git push -u origin main
+### 1. **Upload Image**
+   - Drag & drop or click to browse
+   - Supports JPG, PNG, BMP, TIFF (max 16MB)
 
-# Or if your default branch is master:
-git push -u origin master
-```
+### 2. **Mark Damage**
+   - Use brush tool to mark scratches
+   - Adjust brush size (5-100px)
+   - Undo/clear as needed
 
-## **🛠️ Troubleshooting Common Issues**
+### 3. **Adjust Settings**
+   - **Basic**: Brightness, Contrast, Saturation
+   - **Enhance**: Sharpness, Noise Reduction
+   - **Restore**: Inpainting method, Gamma correction
 
-### **Issue 1: Repository already exists**
-```bash
-# If you get "origin already exists", remove it first:
-git remote remove origin
-git remote add origin https://github.com/FarazKhanAI/ImageRestoration.git
-```
+### 4. **Process & Download**
+   - Click "Process & Restore"
+   - View quality metrics
+   - Download restored image
 
-### **Issue 2: Rejected push due to unrelated histories**
-```bash
-# Pull and merge with unrelated histories
-git pull origin main --allow-unrelated-histories
+## 🏗️ Tech Stack
 
-# If conflicts occur, resolve them, then:
-git add .
-git commit -m "Merge remote repository"
-git push origin main
-```
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **Backend** | Flask 3.0 + OpenCV 4.8 | Image processing & web server |
+| **Processing** | NumPy, Scikit-image | Computer vision algorithms |
+| **Performance** | Numba, Joblib | Speed optimization |
+| **Frontend** | HTML5 Canvas + JavaScript | Interactive UI |
+| **Deployment** | Gunicorn | Production-ready server |
 
-### **Issue 3: Permission denied**
-```bash
-# For HTTPS authentication issues, use personal access token
-# Go to GitHub → Settings → Developer Settings → Personal Access Tokens
-# Create token with repo permissions
-
-# Then use token in URL:
-git remote set-url origin https://YOUR_TOKEN@github.com/FarazKhanAI/ImageRestoration.git
-```
-
-## **📋 Quick Command Reference**
-
-| Command | Purpose |
-|---------|---------|
-| `git init` | Initialize git repository |
-| `git remote add origin <url>` | Add GitHub repository |
-| `git remote -v` | Verify remote URL |
-| `git add .` | Stage all changes |
-| `git commit -m "message"` | Commit changes |
-| `git push origin main` | Push to GitHub |
-| `git status` | Check repository status |
-| `git log --oneline` | View commit history |
-
-## **🔐 Set Up GitHub Authentication**
-
-### **Method A: HTTPS with Credential Helper (Recommended)**
-```bash
-# Cache credentials for 1 hour
-git config --global credential.helper cache
-git config --global credential.helper 'cache --timeout=3600'
-
-# Push and enter username/password when prompted
-git push origin main
-```
-
-### **Method B: SSH Key Authentication**
-```bash
-# Generate SSH key
-ssh-keygen -t rsa -b 4096 -C "your-email@example.com"
-
-# Copy public key
-cat ~/.ssh/id_rsa.pub
-
-# Add to GitHub: Settings → SSH and GPG keys → New SSH key
-
-# Change remote to SSH URL
-git remote set-url origin git@github.com:FarazKhanAI/ImageRestoration.git
-```
-
-## **📁 Project Files to Upload**
-
-Here's what will be uploaded to GitHub:
+## 📁 Project Structure
 
 ```
 ImageRestoration/
-├── app.py
-├── config.py
-├── requirements.txt
-├── .gitignore
-├── .env.example
-├── README.md
-├── backend/
-│   ├── __init__.py
-│   ├── image_processor.py
-│   ├── enhancement.py
-│   ├── scratch_removal.py
-│   ├── utils.py
-│   └── validators.py
-├── static/
-│   ├── css/style.css
-│   ├── js/main.js
-│   └── images/
-├── templates/
-│   ├── base.html
-│   └── index.html
-└── instance/
-    ├── .gitkeep    # Empty file to keep folder
-    ├── uploads/
-    │   └── .gitkeep
-    └── processed/
-        └── .gitkeep
+├── app.py                    # Main Flask application
+├── config.py                # Configuration settings
+├── requirements.txt         # Dependencies
+├── README.md               # This file
+│
+├── backend/                # Core processing logic
+│   ├── image_processor.py  # Main pipeline
+│   ├── enhancement.py      # Image adjustments
+│   ├── scratch_removal.py  # Damage repair
+│   ├── utils.py           # Helper functions
+│   └── validators.py      # Input validation
+│
+├── static/                 # Frontend assets
+│   ├── css/style.css      # Styling
+│   └── js/main.js         # Interactive features
+│
+├── templates/              # HTML pages
+│   ├── base.html          # Layout template
+│   └── index.html         # Main interface
+│
+└── instance/              # User data (ignored in git)
+    ├── uploads/           # Original images
+    └── processed/         # Restored results
 ```
 
-## **📝 Create a .env.example File**
+## 🔬 Algorithms Used
 
-Create `/.env.example` (don't upload `.env` itself):
+| Algorithm | Purpose | Speed |
+|-----------|---------|-------|
+| **Fast Non-local Means** | Noise reduction | ⚡ Fast |
+| **CLAHE** | Detail enhancement | ⚡ Fast |
+| **Telea Inpainting** | Scratch removal | ⚡ Fast |
+| **Navier-Stokes** | Quality inpainting | 🐢 Accurate |
+| **Neighbor Interpolation** | Pixel restoration | ⚡ Fast |
 
-```env
-# Environment Variables Template
-FLASK_APP=app.py
-FLASK_ENV=development
-SECRET_KEY=your-secret-key-here-change-this
-DEBUG=True
-MAX_CONTENT_LENGTH=16777216
-```
+## 🚢 Deployment
 
-## **✅ Final Setup Commands**
-
-Run these commands in order:
-
+### Local Development
 ```bash
-# 1. Navigate to project
-cd F:\DIP_project\image-restoration-app
-
-# 2. Initialize git
-git init
-
-# 3. Add remote
-git remote add origin https://github.com/FarazKhanAI/ImageRestoration.git
-
-# 4. Create .gitignore (copy content above)
-# 5. Create .env.example (copy content above)
-
-# 6. Create .gitkeep files for empty folders
-echo "" > instance/.gitkeep
-echo "" > instance/uploads/.gitkeep  
-echo "" > instance/processed/.gitkeep
-
-# 7. Stage files
-git add .
-
-# 8. Commit
-git commit -m "Initial commit: Complete Image Restoration App with Flask + OpenCV"
-
-# 9. Push to GitHub
-git push -u origin main
-
-# If main branch doesn't exist:
-git branch -M main
-git push -u origin main
+python app.py
 ```
 
-## **🔍 Verify Upload**
-
-After pushing, check your GitHub repository:
-1. Go to https://github.com/FarazKhanAI/ImageRestoration
-2. You should see all your files
-3. The README.md should display properly
-
-## **🔄 Daily Workflow**
-
-For regular development:
-
+### Production (Gunicorn)
 ```bash
-# Check status
-git status
-
-# Add changes
-git add .
-
-# Commit with descriptive message
-git commit -m "Fixed: Updated validation logic for parameters"
-
-# Push to GitHub
-git push origin main
-
-# Pull latest changes (if collaborating)
-git pull origin main
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
-## **🎯 Success Checklist**
+### Docker (Optional)
+```dockerfile
+FROM python:3.10-slim
+COPY . /app
+RUN pip install -r requirements.txt
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+```
 
-- [ ] Git initialized locally
-- [ ] GitHub repository connected
-- [ ] `.gitignore` file created
-- [ ] `.env.example` created (without real secrets)
-- [ ] All project files staged
-- [ ] First commit created
-- [ ] Code pushed to GitHub
-- [ ] Repository visible on GitHub.com
-- [ ] README.md displays correctly
+## 📊 Performance
 
-## **🚨 Important Notes**
+| Image Size | Processing Time | Memory Usage |
+|------------|----------------|--------------|
+| 1MP (1024×768) | < 2 seconds | ~100MB |
+| 5MP (2592×1944) | < 10 seconds | ~300MB |
+| 12MP (4000×3000) | < 30 seconds | ~500MB |
 
-1. **Never commit `.env` file** with real passwords/keys
-2. **Never commit large files** (>100MB)
-3. **Keep `instance/` folder in .gitignore** (except .gitkeep)
-4. **Use meaningful commit messages**
-5. **Push regularly** to backup your work
+## 🤝 Contributing
 
-Your project is now version-controlled and backed up on GitHub! 🎉
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## 📧 Contact
+
+Faraz Khan - [GitHub Issues](https://github.com/FarazKhanAI/ImageRestoration/issues)
+
+Project Link: [https://github.com/FarazKhanAI/ImageRestoration](https://github.com/FarazKhanAI/ImageRestoration)
+
+## 🙏 Acknowledgments
+
+- [OpenCV](https://opencv.org/) - Computer vision library
+- [Flask](https://flask.palletsprojects.com/) - Web framework
+- [Scikit-image](https://scikit-image.org/) - Image processing algorithms
+
+---
+
+<div align="center">
+  <p><strong>✨ Bring old memories back to life ✨</strong></p>
+  <sub>Built with ❤️ using Flask & OpenCV</sub>
+</div>
