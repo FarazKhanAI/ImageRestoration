@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <!-- Upload Section -->
+    <section id="uploadSection" class="upload-section">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h3>Upload Your Image</h3>
+            <p>Drag & drop your image here or click to browse</p>
+            <p class="file-info">Supports JPG, PNG, BMP, TIFF (Max 16MB)</p>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-folder-open"></i> Browse Files
+            </button>
+            <input type="file" id="fileInput" class="file-input" accept="image/*">
+        </div>
+        
+        <div class="features">
+            <h3>What You Can Do:</h3>
+            <div class="features-grid">
+                <div class="feature">
+                    <i class="fas fa-brush"></i>
+                    <h4>Mark Damaged Areas</h4>
+                    <p>Use brush tool to mark scratches and damage</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-sliders-h"></i>
+                    <h4>Adjust Parameters</h4>
+                    <p>Fine-tune brightness, contrast, and more</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-magic"></i>
+                    <h4>Automatic Restoration</h4>
+                    <p>AI-powered inpainting and enhancement</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-download"></i>
+                    <h4>Download Results</h4>
+                    <p>Get your restored image in high quality</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Editor Section -->
+    <section id="editorSection" class="editor-section">
+        <div class="editor-grid">
+            <!-- Image Canvas Area -->
+            <div class="image-canvas-container">
+                <div class="canvas-controls">
+                    <div class="brush-controls">
+                        <label for="brushSize">Brush Size:</label>
+                        <input type="range" id="brushSize" min="5" max="100" value="20">
+                        <span id="brushSizeValue">20</span>px
+                    </div>
+                    <div class="canvas-actions">
+                        <button id="undo" class="btn btn-secondary">
+                            <i class="fas fa-undo"></i> Undo
+                        </button>
+                        <button id="clearMask" class="btn btn-secondary">
+                            <i class="fas fa-trash"></i> Clear Mask
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="canvas-wrapper">
+                    <canvas id="imageCanvas"></canvas>
+                    <canvas id="maskCanvas"></canvas>
+                </div>
+                
+                <p class="canvas-instruction">
+                    <i class="fas fa-mouse-pointer"></i> 
+                    Click and drag to mark damaged areas (scratches, stains, etc.)
+                </p>
+            </div>
+            
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <h2><i class="fas fa-sliders-h"></i> Adjustment Controls</h2>
+                
+                <!-- Basic Adjustments -->
+                <div class="control-group">
+                    <h3><i class="fas fa-sun"></i> Basic Adjustments</h3>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Brightness
+                            <span id="brightnessValue">0</span>
+                        </label>
+                        <input type="range" id="brightness" min="-100" max="100" value="0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Contrast
+                            <span id="contrastValue">0</span>
+                        </label>
+                        <input type="range" id="contrast" min="-100" max="100" value="0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Saturation
+                            <span id="saturationValue">100</span>%
+                        </label>
+                        <input type="range" id="saturation" min="0" max="200" value="100">
+                    </div>
+                </div>
+                
+                <!-- Enhancement -->
+                <div class="control-group">
+                    <h3><i class="fas fa-magic"></i> Enhancement</h3>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Sharpness
+                            <span id="sharpnessValue">0</span>
+                        </label>
+                        <input type="range" id="sharpness" min="-100" max="100" value="0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Noise Reduction
+                            <span id="noiseReductionValue">0</span>
+                        </label>
+                        <input type="range" id="noiseReduction" min="0" max="100" value="0">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Detail Enhancement
+                            <span id="detailEnhancementValue">0</span>
+                        </label>
+                        <input type="range" id="detailEnhancement" min="0" max="100" value="0">
+                    </div>
+                    
+                    <div class="checkbox-container">
+                        <label>
+                            <input type="checkbox" id="autoWhiteBalance">
+                            Auto White Balance
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Inpainting Settings -->
+                <div class="control-group">
+                    <h3><i class="fas fa-tools"></i> Restoration Settings</h3>
+                    
+                    <div class="radio-group">
+                        <label>Inpainting Method:</label>
+                        <div class="radio-options">
+                            <label>
+                                <input type="radio" name="inpainting_method" value="telea" checked>
+                                Fast (Telea)
+                            </label>
+                            <label>
+                                <input type="radio" name="inpainting_method" value="ns">
+                                Quality (Navier-Stokes)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Inpainting Radius
+                            <span id="inpaintingRadiusValue">3</span>
+                        </label>
+                        <input type="range" id="inpaintingRadius" min="1" max="20" value="3">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label>
+                            Gamma Correction
+                            <span id="gammaValue">1.00</span>
+                        </label>
+                        <input type="range" id="gamma" min="0.1" max="3.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+                
+                <!-- Process Button -->
+                <button id="processBtn" class="btn" style="width: 100%; padding: 16px;">
+                    <i class="fas fa-cogs"></i> Process & Restore Image
+                </button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Processing Section -->
+    <section id="processingSection" class="processing-section">
+        <div class="spinner"></div>
+        <h2>Processing Your Image</h2>
+        <p>Applying enhancements and restoring damaged areas...</p>
+        <p>This may take a few moments depending on image size</p>
+    </section>
+    
+    <!-- Results Section -->
+    <section id="resultsSection" class="results-section">
+        <h2 style="text-align: center; margin-bottom: 30px;">
+            <i class="fas fa-check-circle" style="color: #28a745;"></i>
+            Image Successfully Restored!
+        </h2>
+        
+        <!-- Image Comparison -->
+        <div class="image-comparison">
+            <div class="image-box">
+                <img id="originalImage" alt="Original Image">
+                <div class="image-label">Original Image</div>
+            </div>
+            
+            <div class="image-box">
+                <img id="processedImage" alt="Restored Image">
+                <div class="image-label">Restored Image</div>
+            </div>
+        </div>
+        
+        <!-- Metrics -->
+        <div class="metrics-panel">
+            <h3 style="margin-bottom: 20px; text-align: center;">
+                <i class="fas fa-chart-line"></i> Quality Metrics
+            </h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Processing Time</h4>
+                    <div class="value" id="processingTime">0.0</div>
+                    <div class="unit">seconds</div>
+                </div>
+                <div class="metric-card">
+                    <h4>PSNR</h4>
+                    <div class="value" id="psnrValue">0.0</div>
+                    <div class="unit">dB (Higher is better)</div>
+                </div>
+                <div class="metric-card">
+                    <h4>SSIM</h4>
+                    <div class="value" id="ssimValue">0.0</div>
+                    <div class="unit">0-1 (Higher is better)</div>
+                </div>
+                <div class="metric-card">
+                    <h4>Improvement</h4>
+                    <div class="value" id="improvementValue">-</div>
+                    <div class="unit">Quality Assessment</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons" style="display: flex; gap: 15px; justify-content: center;">
+            <button id="downloadBtn" class="btn">
+                <i class="fas fa-download"></i> Download Restored Image
+            </button>
+            <button id="newImageBtn" class="btn btn-secondary">
+                <i class="fas fa-plus"></i> Process Another Image
+            </button>
+        </div>
+    </section>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .features {
+        margin-top: 40px;
+        text-align: center;
+    }
+    
+    .features h3 {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        color: #333;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .feature {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .feature:hover {
+        transform: translateY(-5px);
+    }
+    
+    .feature i {
+        font-size: 2.5rem;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+    
+    .feature h4 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .feature p {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .canvas-instruction {
+        text-align: center;
+        margin-top: 15px;
+        color: #666;
+        font-style: italic;
+    }
+    
+    .checkbox-container {
+        margin-top: 15px;
+    }
+    
+    .checkbox-container label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        color: #333;
+    }
+    
+    .checkbox-container input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .radio-group {
+        margin-bottom: 20px;
+    }
+    
+    .radio-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .radio-options {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .radio-options label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: normal;
+        cursor: pointer;
+    }
+    
+    .radio-options input[type="radio"] {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .file-info {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    
+    .action-buttons {
+        margin-top: 30px;
+    }
+</style>
+{% endblock %}
