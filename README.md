@@ -10,7 +10,7 @@
 
 **Professional-grade image restoration with multi-algorithm inpainting**
 
-[Live Demo](#) • [Report Bug](https://github.com/FarazKhanAI/ImageRestoration/issues) • [Request Feature](https://github.com/FarazKhanAI/ImageRestoration/issues)
+[ • [Report Bug](https://github.com/FarazKhanAI/ImageRestoration/issues) • [Request Feature](https://github.com/FarazKhanAI/ImageRestoration/issues)
 
 <img src="https://github.com/FarazKhanAI/ImageRestoration/blob/main/demo.gif?raw=true" width="600" alt="Image Restoration Demo">
 
