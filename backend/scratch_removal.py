@@ -1,322 +1,262 @@
 import cv2
 import numpy as np
 from numba import jit
-from typing import Tuple, Optional
-from scipy import ndimage
-from sklearn.cluster import KMeans
-import warnings
-warnings.filterwarnings('ignore')
+import time  
+# Save mask to your desired location
+import os
+from datetime import datetime
 
-class ScratchRestorer:
+
+
+class AdvancedInpainter:
+    def __init__(self):
+        self.debug = True
     
-    @staticmethod
-    def preprocess_mask(mask: np.ndarray, feather_radius: int = 5) -> np.ndarray:
-        """
-        Enhanced mask preprocessing with morphological operations and feathering
-        """
-        # Ensure mask is binary
-        mask_binary = (mask > 127).astype(np.uint8) * 255
-        
-        # Apply morphological operations to clean mask
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        mask_processed = cv2.morphologyEx(mask_binary, cv2.MORPH_CLOSE, kernel, iterations=2)
-        mask_processed = cv2.morphologyEx(mask_processed, cv2.MORPH_OPEN, kernel, iterations=1)
-        
-        # Add feathering for soft edges
-        if feather_radius > 0:
-            mask_float = mask_processed.astype(np.float32) / 255.0
-            mask_float = cv2.GaussianBlur(mask_float, (feather_radius*2+1, feather_radius*2+1), feather_radius/2)
-            mask_processed = (mask_float * 255).astype(np.uint8)
-        
-        return mask_processed
+    def debug_print(self, msg):
+        if self.debug:
+            print(f"[DEBUG] {msg}")
     
-    @staticmethod
-    def advanced_inpaint_telea(image: np.ndarray, 
-                              mask: np.ndarray, 
-                              radius: int = 3,
-                              iterations: int = 3) -> np.ndarray:
+    def create_precise_mask(self, image_shape, coordinates, brush_size=20):
         """
-        Enhanced Telea algorithm with iterative processing
+        Create accurate mask from frontend coordinates
         """
-        if np.sum(mask) == 0:
-            return image.copy()
-        
-        # Preprocess mask
-        mask_processed = ScratchRestorer.preprocess_mask(mask)
-        
-        # Convert image to float for better precision
-        image_float = image.astype(np.float32) / 255.0
-        
-        result = image_float.copy()
-        
-        for i in range(iterations):
-            # Adaptive radius based on iteration
-            current_radius = max(1, radius - i)
-            
-            if len(image.shape) == 3:
-                # Process color image with channel correlation
-                result_bgr = cv2.cvtColor((result * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
-                inpainted = cv2.inpaint(result_bgr, mask_processed, current_radius, cv2.INPAINT_TELEA)
-                inpainted = cv2.cvtColor(inpainted, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-            else:
-                # Grayscale
-                inpainted_uint8 = cv2.inpaint((result * 255).astype(np.uint8), mask_processed, 
-                                            current_radius, cv2.INPAINT_TELEA)
-                inpainted = inpainted_uint8.astype(np.float32) / 255.0
-            
-            # Blend with original based on mask
-            mask_weight = mask_processed.astype(np.float32) / 255.0
-            if len(image.shape) == 3:
-                mask_weight = np.stack([mask_weight] * 3, axis=2)
-            
-            result = result * (1 - mask_weight) + inpainted * mask_weight
-        
-        return (result * 255).astype(np.uint8)
-    
-    @staticmethod
-    def advanced_inpaint_ns(image: np.ndarray, 
-                           mask: np.ndarray, 
-                           radius: int = 3) -> np.ndarray:
-        """
-        Enhanced Navier-Stokes with edge preservation
-        """
-        if np.sum(mask) == 0:
-            return image.copy()
-        
-        # Preprocess mask
-        mask_processed = ScratchRestorer.preprocess_mask(mask, feather_radius=3)
-        
-        # Calculate edge map to preserve important structures
-        if len(image.shape) == 3:
-            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        if len(image_shape) == 3:  # If color image, get only height and width
+            height, width = image_shape[0], image_shape[1]
         else:
-            gray = image
+            height, width = image_shape
         
-        edges = cv2.Canny(gray, 50, 150)
-        edges_dilated = cv2.dilate(edges, np.ones((3, 3), np.uint8), iterations=1)
+        mask = np.zeros((height, width), dtype=np.uint8)
         
-        # Protect edges from inpainting
-        protected_mask = np.minimum(mask_processed, 255 - edges_dilated)
+        self.debug_print(f"Creating mask: shape={(height, width)}, points={len(coordinates)}, brush={brush_size}")
         
+        if not coordinates:
+            return mask
+        
+        # Convert brush size
+        try:
+            brush_size = int(float(brush_size))
+        except:
+            brush_size = 20
+        
+        # Draw each coordinate point
+        for i, point in enumerate(coordinates):
+            try:
+                # Handle coordinate format
+                if isinstance(point, dict):
+                    x = int(float(point.get('x', 0)))
+                    y = int(float(point.get('y', 0)))
+                elif isinstance(point, (list, tuple)) and len(point) >= 2:
+                    x = int(float(point[0]))
+                    y = int(float(point[1]))
+                else:
+                    continue
+                
+                # Ensure bounds
+                x = np.clip(x, 0, width - 1)
+                y = np.clip(y, 0, height - 1)
+                
+                # Draw circle
+                cv2.circle(mask, (x, y), brush_size, 255, -1)
+                
+                if i < 2:  # Debug first points
+                    self.debug_print(f"  Point {i}: ({x}, {y})")
+                    
+            except Exception as e:
+                continue
+        
+        # Process mask for better inpainting
+        mask = self._process_mask(mask)
+        
+        self.debug_print(f"Mask created: {np.sum(mask > 0)} white pixels")
+        
+
+        # Create timestamp for unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        mask_filename = f"mask_{timestamp}_{np.random.randint(1000,9999)}.png"
+        mask_save_path = r"F:\DIP_project\image-restoration-app\instance\uploads\masks" + "\\" + mask_filename
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(mask_save_path), exist_ok=True)
+
+        # Save the mask
+        cv2.imwrite(mask_save_path, mask)
+        print(f"Mask saved to: {mask_save_path}")
+        return mask
+    
+   
+
+
+
+    def _process_mask(self, mask):
+        """Enhance mask for better inpainting results"""
+        if np.sum(mask) == 0:
+            return mask
+        
+        # 1. Dilate to connect nearby strokes
+        kernel = np.ones((3, 3), np.uint8)
+        mask = cv2.dilate(mask, kernel, iterations=1)
+        
+        # 2. Add soft edges (feathering)
+        mask_float = mask.astype(np.float32) / 255.0
+        mask_float = cv2.GaussianBlur(mask_float, (5, 5), 1.5)
+        mask = (mask_float * 255).astype(np.uint8)
+        
+        # 3. Ensure binary (0 or 255)
+        mask = np.where(mask > 127, 255, 0).astype(np.uint8)
+        
+        return mask
+    
+    def multi_algorithm_inpaint(self, image, mask):
+        """
+        Hybrid inpainting using multiple algorithms for best results
+        """
+        start_time = time.time()
+        
+        if np.sum(mask) == 0:
+            return image
+        
+        # Convert to BGR for OpenCV
         if len(image.shape) == 3:
-            # Process in LAB color space for better color preservation
-            lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-            channels = cv2.split(lab)
-            inpainted_channels = []
-            
-            for i, channel in enumerate(channels):
-                inpainted = cv2.inpaint(channel, protected_mask, radius, cv2.INPAINT_NS)
-                
-                # Special handling for L channel (lightness)
-                if i == 0:
-                    # Preserve original brightness distribution
-                    hist_original = cv2.calcHist([channel], [0], None, [256], [0, 256])
-                    hist_inpainted = cv2.calcHist([inpainted], [0], None, [256], [0, 256])
-                    # Match histograms for smoother transition
-                    inpainted = ScratchRestorer._match_histograms(inpainted, channel, mask_processed)
-                
-                inpainted_channels.append(inpainted)
-            
-            result_lab = cv2.merge(inpainted_channels)
-            result = cv2.cvtColor(result_lab, cv2.COLOR_LAB2RGB)
+            image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         else:
-            result = cv2.inpaint(image, protected_mask, radius, cv2.INPAINT_NS)
+            image_bgr = image.copy()
+        
+        self.debug_print(f"Inpainting: mask area={np.sum(mask > 0)} pixels")
+        
+        # Strategy based on mask size
+        mask_area = np.sum(mask > 0)
+        total_pixels = mask.shape[0] * mask.shape[1]
+        ratio = mask_area / total_pixels
+        
+        self.debug_print(f"Damage ratio: {ratio:.3f}")
+        
+        if ratio < 0.01:  # Very small damage
+            result = self._fast_inpaint(image_bgr, mask)
+        elif ratio < 0.1:  # Medium damage
+            result = self._quality_inpaint(image_bgr, mask)
+        else:  # Large damage
+            result = self._advanced_inpaint(image_bgr, mask)
+        
+        # Convert back to RGB
+        if len(image.shape) == 3:
+            result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+        
+        # Color correction
+        result = self._color_correction(result, image, mask)
+        
+        # Post-processing
+        result = self._post_process(result, mask)
+        
+        elapsed = time.time() - start_time
+        self.debug_print(f"Inpainting completed in {elapsed:.2f}s")
         
         return result
     
-    @staticmethod
-    def _match_histograms(source: np.ndarray, target: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        """Match histograms of inpainted areas to surrounding regions"""
-        source_masked = source[mask > 0]
-        target_masked = target[mask > 0]
+    def _fast_inpaint(self, image, mask):
+        """Fast Telea algorithm for small areas"""
+        return cv2.inpaint(image, mask, 3, cv2.INPAINT_TELEA)
+    
+    def _quality_inpaint(self, image, mask):
+        """Navier-Stokes for better quality"""
+        # First pass
+        result = cv2.inpaint(image, mask, 3, cv2.INPAINT_NS)
         
-        if len(source_masked) == 0 or len(target_masked) == 0:
-            return source
-        
-        # Calculate histograms
-        source_hist = np.histogram(source_masked, bins=256, range=(0, 256))[0]
-        target_hist = np.histogram(target_masked, bins=256, range=(0, 256))[0]
-        
-        # Calculate CDFs
-        source_cdf = source_hist.cumsum()
-        target_cdf = target_hist.cumsum()
-        
-        # Normalize CDFs
-        source_cdf = source_cdf / source_cdf[-1]
-        target_cdf = target_cdf / target_cdf[-1]
-        
-        # Create mapping function
-        mapping = np.zeros(256, dtype=np.uint8)
-        for i in range(256):
-            mapping[i] = np.argmin(np.abs(target_cdf - source_cdf[i]))
-        
-        # Apply mapping
-        result = source.copy()
-        mask_indices = mask > 0
-        result[mask_indices] = mapping[source[mask_indices]]
+        # Second pass with smaller radius
+        if np.sum(mask) > 100:
+            result = cv2.inpaint(result, mask, 2, cv2.INPAINT_TELEA)
         
         return result
     
-    @staticmethod
-    def patch_based_inpainting(image: np.ndarray, 
-                              mask: np.ndarray, 
-                              patch_size: int = 9) -> np.ndarray:
-        """
-        Simple patch-based inpainting algorithm
-        """
-        if np.sum(mask) == 0:
-            return image.copy()
+    def _advanced_inpaint(self, image, mask):
+        """Multi-pass hybrid approach for large areas"""
+        results = []
         
-        mask_processed = ScratchRestorer.preprocess_mask(mask)
-        result = image.copy()
+        # Pass 1: Telea
+        r1 = cv2.inpaint(image, mask, 5, cv2.INPAINT_TELEA)
+        results.append(r1)
         
-        # Get coordinates of pixels to fill
-        y_coords, x_coords = np.where(mask_processed > 0)
+        # Pass 2: NS
+        r2 = cv2.inpaint(image, mask, 3, cv2.INPAINT_NS)
+        results.append(r2)
         
-        if len(y_coords) == 0:
+        # Pass 3: Telea with different radius
+        r3 = cv2.inpaint(image, mask, 2, cv2.INPAINT_TELEA)
+        results.append(r3)
+        
+        # Combine results
+        combined = np.zeros_like(image, dtype=np.float32)
+        weights = [0.4, 0.4, 0.2]  # Weight for each result
+        
+        for i, res in enumerate(results):
+            combined += res.astype(np.float32) * weights[i]
+        
+        return np.clip(combined, 0, 255).astype(np.uint8)
+    
+    def _color_correction(self, inpainted, original, mask):
+        """Match colors of inpainted area to surroundings"""
+        if np.sum(mask) == 0 or len(inpainted.shape) != 3:
+            return inpainted
+        
+        result = inpainted.copy()
+        
+        # Get border area around mask
+        kernel = np.ones((5, 5), np.uint8)
+        dilated = cv2.dilate(mask, kernel, iterations=2)
+        border = cv2.subtract(dilated, mask)
+        
+        if np.sum(border) == 0:
             return result
         
-        half_patch = patch_size // 2
-        
-        for y, x in zip(y_coords, x_coords):
-            # Define patch boundaries
-            y_start = max(0, y - half_patch)
-            y_end = min(image.shape[0], y + half_patch + 1)
-            x_start = max(0, x - half_patch)
-            x_end = min(image.shape[1], x + half_patch + 1)
-            
-            # Create patch mask
-            patch_mask = mask_processed[y_start:y_end, x_start:x_end]
-            
-            # Skip if patch is completely masked
-            if np.all(patch_mask > 0):
+        # Adjust each color channel
+        for channel in range(3):
+            # Calculate average color in border
+            border_values = original[:, :, channel][border > 0]
+            if len(border_values) == 0:
                 continue
             
-            # Find best matching patch from surrounding area
-            search_radius = patch_size * 3
-            search_y_start = max(0, y - search_radius)
-            search_y_end = min(image.shape[0], y + search_radius + 1)
-            search_x_start = max(0, x - search_radius)
-            search_x_end = min(image.shape[1], x + search_radius + 1)
+            border_mean = np.mean(border_values)
             
-            best_patch = None
-            best_distance = float('inf')
+            # Calculate average color in inpainted area
+            inpainted_values = inpainted[:, :, channel][mask > 0]
+            if len(inpainted_values) == 0:
+                continue
             
-            for sy in range(search_y_start, search_y_end - patch_size):
-                for sx in range(search_x_start, search_x_end - patch_size):
-                    # Check if center of candidate patch is not masked
-                    if mask_processed[sy + half_patch, sx + half_patch] > 0:
-                        continue
-                    
-                    candidate_patch = image[sy:sy+patch_size, sx:sx+patch_size]
-                    current_patch = image[y_start:y_end, x_start:x_end]
-                    
-                    # Calculate distance only on non-masked areas
-                    valid_mask = (patch_mask == 0).astype(np.float32)
-                    if np.sum(valid_mask) == 0:
-                        continue
-                    
-                    if len(image.shape) == 3:
-                        distance = np.sum((candidate_patch - current_patch) ** 2 * valid_mask[:, :, None]) / np.sum(valid_mask)
-                    else:
-                        distance = np.sum((candidate_patch - current_patch) ** 2 * valid_mask) / np.sum(valid_mask)
-                    
-                    if distance < best_distance:
-                        best_distance = distance
-                        best_patch = candidate_patch
+            inpainted_mean = np.mean(inpainted_values)
             
-            if best_patch is not None:
-                # Blend patch into result
-                patch_weight = 1.0 - (patch_mask.astype(np.float32) / 255.0)
-                if len(image.shape) == 3:
-                    patch_weight = np.stack([patch_weight] * 3, axis=2)
+            # Adjust if difference is significant
+            if abs(border_mean - inpainted_mean) > 5:
+                # Calculate adjustment
+                if inpainted_mean > 0:
+                    factor = border_mean / inpainted_mean
+                    factor = np.clip(factor, 0.7, 1.3)  # Limit adjustment
+                    
+                    # Apply to inpainted area
+                    channel_data = result[:, :, channel].astype(np.float32)
+                    channel_data[mask > 0] *= factor
+                    result[:, :, channel] = np.clip(channel_data, 0, 255).astype(np.uint8)
+        
+        return result
+    
+    def _post_process(self, image, mask):
+        """Final enhancements"""
+        result = image.copy()
+        
+        # Light sharpening on inpainted areas
+        if np.sum(mask) > 0 and len(image.shape) == 3:
+            # Create sharpening kernel
+            kernel = np.array([[0, -1, 0],
+                               [-1, 5, -1],
+                               [0, -1, 0]], dtype=np.float32) * 0.5
+            
+            # Apply only to inpainted areas
+            for c in range(3):
+                channel = result[:, :, c].astype(np.float32)
+                sharpened = cv2.filter2D(channel, -1, kernel)
                 
-                result[y_start:y_end, x_start:x_end] = (
-                    result[y_start:y_end, x_start:x_end] * (1 - patch_weight) + 
-                    best_patch * patch_weight
-                ).astype(np.uint8)
+                # Blend: 30% sharpened, 70% original in masked area
+                alpha = 0.3
+                channel[mask > 0] = channel[mask > 0] * (1 - alpha) + sharpened[mask > 0] * alpha
+                result[:, :, c] = np.clip(channel, 0, 255).astype(np.uint8)
         
-        return result
-    
-    @staticmethod
-    def multi_scale_inpainting(image: np.ndarray, 
-                              mask: np.ndarray, 
-                              scales: int = 3) -> np.ndarray:
-        """
-        Multi-scale inpainting for better large-area restoration
-        """
-        current_image = image.copy()
-        current_mask = mask.copy()
-        
-        for scale in range(scales):
-            scale_factor = 1.0 / (2 ** scale)
-            
-            if scale_factor < 0.25:  # Minimum scale
-                break
-            
-            # Resize image and mask
-            small_width = int(image.shape[1] * scale_factor)
-            small_height = int(image.shape[0] * scale_factor)
-            
-            small_image = cv2.resize(current_image, (small_width, small_height))
-            small_mask = cv2.resize(current_mask, (small_width, small_height))
-            
-            # Apply inpainting at this scale
-            if scale == 0:
-                # Use advanced algorithm for finest scale
-                inpainted = ScratchRestorer.advanced_inpaint_telea(small_image, small_mask)
-            else:
-                # Use simpler algorithm for coarser scales
-                small_mask_binary = (small_mask > 127).astype(np.uint8) * 255
-                inpainted = cv2.inpaint(small_image, small_mask_binary, 3, cv2.INPAINT_TELEA)
-            
-            if scale < scales - 1:
-                # Upsample and use as initialization for next scale
-                current_image = cv2.resize(inpainted, (image.shape[1], image.shape[0]))
-                # Refine mask for next scale
-                current_mask = cv2.resize(mask, (image.shape[1], image.shape[0]))
-            else:
-                # Final result
-                result = inpainted
-        
-        return result
-    
-    @staticmethod
-    def smart_inpainting(image: np.ndarray, 
-                        mask: np.ndarray, 
-                        method: str = 'auto',
-                        adaptive: bool = True) -> np.ndarray:
-        """
-        Smart inpainting that chooses the best method based on mask properties
-        """
-        # Calculate mask properties
-        mask_area = np.sum(mask > 0)
-        total_area = mask.shape[0] * mask.shape[1]
-        mask_ratio = mask_area / total_area
-        
-        # Analyze mask shape complexity
-        contours, _ = cv2.findContours((mask > 0).astype(np.uint8), 
-                                      cv2.RETR_EXTERNAL, 
-                                      cv2.CHAIN_APPROX_SIMPLE)
-        contour_count = len(contours)
-        
-        if method == 'auto':
-            # Choose method based on mask characteristics
-            if mask_ratio < 0.05:  # Small damage
-                method = 'telea'
-            elif mask_ratio < 0.2:  # Medium damage
-                method = 'patch'
-            else:  # Large damage
-                method = 'multiscale'
-        
-        # Apply chosen method
-        if method == 'telea':
-            return ScratchRestorer.advanced_inpaint_telea(image, mask)
-        elif method == 'ns':
-            return ScratchRestorer.advanced_inpaint_ns(image, mask)
-        elif method == 'patch':
-            return ScratchRestorer.patch_based_inpainting(image, mask)
-        elif method == 'multiscale':
-            return ScratchRestorer.multi_scale_inpainting(image, mask)
-        else:
-            return ScratchRestorer.advanced_inpaint_telea(image, mask)
+        # Ensure proper range
+        return np.clip(result, 0, 255).astype(np.uint8)
