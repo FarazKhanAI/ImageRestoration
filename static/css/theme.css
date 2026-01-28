@@ -3,7 +3,7 @@
     /* Light Theme Variables - Modern & Elite */
     --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --secondary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    --bg-primary: #f8fafc;
+    --bg-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);;
     --bg-secondary: #ffffff;
     --bg-tertiary: #f1f5f9;
     --text-primary: #0f172a;

@@ -1,4 +1,3 @@
-
 class ImageEditor {
     constructor() {
         this.originalImage = null;
@@ -25,7 +24,7 @@ class ImageEditor {
         // Updated processing parameters
         this.processingParams = {
             gamma: 1.0,
-            inpainting_method: 'telea',
+            inpainting_method: 'hybrid',
             inpainting_radius: 3,
             brush_size: 20
         };
@@ -49,12 +48,9 @@ class ImageEditor {
             currentBrushSize: document.getElementById('currentBrushSize'),
             clearBtn: document.getElementById('clearBtn'),
             undoBtn: document.getElementById('undoBtn'),
-            zoomInBtn: document.getElementById('zoomInBtn'),
-            zoomOutBtn: document.getElementById('zoomOutBtn'),
-            resetZoomBtn: document.getElementById('resetZoomBtn'),
+            changeImageBtn: document.getElementById('changeImageBtn'),
             processBtn: document.getElementById('processBtn'),
-            strokeCount: document.getElementById('strokeCount'),
-            zoomLevel: document.getElementById('zoomLevel'),
+            inpaintingMethod: document.getElementById('inpaintingMethod'),
             inpaintingRadius: document.getElementById('inpaintingRadius'),
             inpaintingRadiusValue: document.getElementById('inpaintingRadiusValue'),
             gamma: document.getElementById('gamma'),
@@ -99,11 +95,6 @@ class ImageEditor {
             this.saveToLocalStorage();
         });
         
-        // Zoom controls
-        this.elements.zoomInBtn.addEventListener('click', () => this.zoomIn());
-        this.elements.zoomOutBtn.addEventListener('click', () => this.zoomOut());
-        this.elements.resetZoomBtn.addEventListener('click', () => this.resetZoom());
-        
         // Canvas panning
         this.elements.imageCanvas.addEventListener('wheel', (e) => this.handleWheel(e));
         this.elements.imageCanvas.addEventListener('mousedown', (e) => {
@@ -132,6 +123,9 @@ class ImageEditor {
         this.elements.clearBtn.addEventListener('click', () => this.clearMask());
         this.elements.undoBtn.addEventListener('click', () => this.undo());
         
+        // Change Image button
+        this.elements.changeImageBtn.addEventListener('click', () => this.changeImage());
+        
         // Processing button
         this.elements.processBtn.addEventListener('click', () => this.processImage());
         
@@ -148,12 +142,10 @@ class ImageEditor {
             this.saveToLocalStorage();
         });
         
-        // Inpainting method selection
-        document.querySelectorAll('input[name="inpainting_method"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                this.processingParams.inpainting_method = e.target.value;
-                this.saveToLocalStorage();
-            });
+        // Inpainting method selection (dropdown)
+        this.elements.inpaintingMethod.addEventListener('change', (e) => {
+            this.processingParams.inpainting_method = e.target.value;
+            this.saveToLocalStorage();
         });
         
         // Keyboard shortcuts
@@ -224,8 +216,6 @@ class ImageEditor {
         };
     }
     
-
-
     fitImageToCanvas() {
         const canvas = this.elements.imageCanvas;
         const maskCanvas = this.elements.maskCanvas;
@@ -273,9 +263,6 @@ class ImageEditor {
         // Clear mask
         this.maskCtx.clearRect(0, 0, canvasWidth, canvasHeight);
         
-        // Update zoom display
-        this.updateZoomDisplay();
-        
         // Redraw existing mask if any
         this.redrawMask();
     }
@@ -313,7 +300,6 @@ class ImageEditor {
         this.drawPoint(pos.x, pos.y);
         this.maskData.push({x: pos.x, y: pos.y});
         this.strokeCount++;
-        this.updateStrokeCount();
     }
     
     draw(e) {
@@ -353,20 +339,7 @@ class ImageEditor {
     
     updateBrushSizeDisplay() {
         this.elements.brushSizeValue.textContent = this.brushSize;
-        this.elements.currentBrushSize.textContent = this.brushSize;
         this.processingParams.brush_size = this.brushSize;
-    }
-    
-    updateStrokeCount() {
-        if (this.elements.strokeCount) {
-            this.elements.strokeCount.textContent = this.strokeCount;
-        }
-    }
-    
-    updateZoomDisplay() {
-        if (this.elements.zoomLevel) {
-            this.elements.zoomLevel.textContent = Math.round(this.scale * 100);
-        }
     }
     
     clearMask() {
@@ -377,7 +350,6 @@ class ImageEditor {
             this.maskCtx.clearRect(0, 0, this.elements.maskCanvas.width, this.elements.maskCanvas.height);
             this.maskData = [];
             this.strokeCount = 0;
-            this.updateStrokeCount();
             this.saveToLocalStorage();
         }
     }
@@ -400,7 +372,6 @@ class ImageEditor {
         this.maskCtx.putImageData(previousState.imageData, 0, 0);
         this.maskData = previousState.maskData;
         this.strokeCount = previousState.strokeCount;
-        this.updateStrokeCount();
         this.saveToLocalStorage();
     }
     
@@ -422,7 +393,6 @@ class ImageEditor {
         this.maskCtx.putImageData(nextState.imageData, 0, 0);
         this.maskData = nextState.maskData;
         this.strokeCount = nextState.strokeCount;
-        this.updateStrokeCount();
         this.saveToLocalStorage();
     }
     
@@ -457,24 +427,6 @@ class ImageEditor {
         this.maskCtx.stroke();
     }
     
-    zoomIn() {
-        this.scale = Math.min(this.scale * 1.2, 3);
-        this.updateZoomDisplay();
-        this.fitImageToCanvas();
-    }
-    
-    zoomOut() {
-        this.scale = Math.max(this.scale / 1.2, 0.1);
-        this.updateZoomDisplay();
-        this.fitImageToCanvas();
-    }
-    
-    resetZoom() {
-        this.scale = 1;
-        this.updateZoomDisplay();
-        this.fitImageToCanvas();
-    }
-    
     handleWheel(e) {
         e.preventDefault();
         
@@ -482,7 +434,6 @@ class ImageEditor {
             // Zoom with Ctrl + Scroll
             const delta = e.deltaY > 0 ? 0.9 : 1.1;
             this.scale = Math.max(0.1, Math.min(this.scale * delta, 3));
-            this.updateZoomDisplay();
             this.fitImageToCanvas();
         }
     }
@@ -518,6 +469,12 @@ class ImageEditor {
     stopPanning() {
         this.isPanning = false;
         this.elements.imageCanvas.style.cursor = 'crosshair';
+    }
+    
+    changeImage() {
+        if (confirm('Are you sure you want to change the image? All current marks will be lost.')) {
+            window.location.href = '/';
+        }
     }
     
     async processImage() {
@@ -607,20 +564,18 @@ class ImageEditor {
                 // Update UI elements
                 this.elements.brushSizeInput.value = this.brushSize;
                 this.updateBrushSizeDisplay();
-                this.updateStrokeCount();
                 
-                // Set radio buttons
-                const radio = document.querySelector(`input[name="inpainting_method"][value="${this.processingParams.inpainting_method}"]`);
-                if (radio) {
-                    radio.checked = true;
+                // Set dropdown value
+                if (this.elements.inpaintingMethod) {
+                    this.elements.inpaintingMethod.value = this.processingParams.inpainting_method || 'hybrid';
                 }
                 
                 // Set slider values
-                this.elements.inpaintingRadius.value = this.processingParams.inpainting_radius;
-                this.elements.inpaintingRadiusValue.textContent = this.processingParams.inpainting_radius;
+                this.elements.inpaintingRadius.value = this.processingParams.inpainting_radius || 3;
+                this.elements.inpaintingRadiusValue.textContent = this.processingParams.inpainting_radius || 3;
                 
-                this.elements.gamma.value = this.processingParams.gamma;
-                this.elements.gammaValue.textContent = this.processingParams.gamma.toFixed(2);
+                this.elements.gamma.value = this.processingParams.gamma || 1.0;
+                this.elements.gammaValue.textContent = (this.processingParams.gamma || 1.0).toFixed(2);
                 
             } catch (e) {
                 console.error('Error loading saved data:', e);
