@@ -336,5 +336,10 @@ def reset():
     session.clear()
     return redirect(url_for('index'))
 
+@app.route('/about')
+def about():
+    """About page with application information"""
+    return render_template('about.html')
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
