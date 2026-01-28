@@ -10,8 +10,11 @@ ENV/
 env.bak/
 venv.bak/
 
-# Instance
-instance/
+# Instance - BUT we need to keep the instance folder structure
+instance/*.db
+instance/*.log
+!instance/uploads/
+!instance/processed/
 !instance/.gitkeep
 
 # IDE
@@ -33,14 +36,22 @@ Thumbs.db
 *.log
 logs/
 
-# Uploads
-instance/uploads/
-instance/processed/
+# Uploads - Keep directory structure but ignore individual files
+instance/uploads/raw/*
+instance/uploads/masks/*
+instance/processed/*
+!instance/uploads/raw/.gitkeep
+!instance/uploads/masks/.gitkeep
+!instance/processed/.gitkeep
 
 # Temp files
 *.tmp
 *.temp
 
-# Environment variables
+# Environment variables - Don't commit .env to production
 .env
 .flaskenv
+
+# Railway specific
+.railway/
+railway.json

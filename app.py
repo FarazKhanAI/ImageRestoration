@@ -7,18 +7,21 @@ import numpy as np
 import traceback
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from config import Config
+from config import get_config
 from backend.image_processor import RobustImageProcessor
 from backend.utils import ImageUtils
 
+
+
 # Initialize Flask app
 app = Flask(__name__)
-app.config.from_object(Config)
-app.secret_key = os.environ.get('SECRET_KEY')
 
-# Ensure directories exist
-Config.init_app(app)
+# Get appropriate config based on environment
+config_obj = get_config()
+app.config.from_object(config_obj)
 
+# Initialize the app with config
+config_obj.init_app(app)
 # Initialize processors
 processor = RobustImageProcessor()
 utils = ImageUtils()
@@ -341,5 +344,7 @@ def about():
     """About page with application information"""
     return render_template('about.html')
 
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
