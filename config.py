@@ -27,7 +27,10 @@ class Config:
     DEFAULT_QUALITY = 90
     ENABLE_CACHE = True
     THREADS = 4
-    
+        # Deployment settings
+    @staticmethod
+    def get_port():
+        return int(os.environ.get('PORT', 5000))
     # Session Settings
     SESSION_TYPE = 'filesystem'
     PERMANENT_SESSION_LIFETIME = 3600  # 1 hour

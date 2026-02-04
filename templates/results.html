@@ -153,25 +153,28 @@
             </div>
         </div>
         
-        <!-- Action Buttons -->
+        <!-- In the action buttons section -->
         <div class="action-section">
             <div class="action-buttons">
-                <button id="downloadBtn" class="btn btn-success">
+                <a href="{{ url_for('download_image', filename=result_filename) }}?session_id={{ session_id }}" 
+                class="btn btn-success" id="downloadBtn">
                     <i class="fas fa-download"></i>
                     <span>Download Restored Image</span>
-                </button>
+                </a>
                 
-                <button id="newImageBtn" class="btn btn-primary">
+                <a href="/reset?session_id={{ session_id }}" class="btn btn-primary" id="newImageBtn">
                     <i class="fas fa-plus"></i>
                     <span>Process Another Image</span>
-                </button>
+                </a>
                 
-                <a href="{{ url_for('editor') }}" class="btn btn-secondary">
+                <a href="/editor?session_id={{ session_id }}" class="btn btn-secondary">
                     <i class="fas fa-edit"></i>
                     <span>Edit Settings</span>
                 </a>
             </div>
         </div>
+
+
     </div>
 </div>
 {% endblock %}

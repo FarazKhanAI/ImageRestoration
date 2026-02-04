@@ -478,8 +478,13 @@ class ImageEditor {
     }
     
     async processImage() {
-        if (!this.originalImage) {
-            alert('Please upload an image first');
+        // Get session_id from URL or meta tag
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        if (!sessionId) {
+            alert('Session expired. Please upload the image again.');
+            window.location.href = '/';
             return;
         }
         
@@ -488,6 +493,7 @@ class ImageEditor {
         try {
             // Prepare form data
             const formData = new FormData();
+            formData.append('session_id', sessionId);
             
             // Add mask data if exists
             if (this.maskData.length > 0) {
@@ -513,7 +519,7 @@ class ImageEditor {
             
             if (result.success) {
                 // Redirect to results page
-                window.location.href = result.redirect || '/results';
+                window.location.href = result.redirect;
             } else {
                 throw new Error(result.error || 'Processing failed');
             }
@@ -523,8 +529,10 @@ class ImageEditor {
             alert('Error processing image: ' + error.message);
             this.hideLoading();
         }
-    }
-    
+        }
+
+
+
     showLoading(message = 'Processing...') {
         if (this.loadingOverlay) {
             const messageEl = this.loadingOverlay.querySelector('h3');

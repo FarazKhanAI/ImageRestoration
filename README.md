@@ -1,3 +1,12 @@
+---
+title: Image Restoration Studio
+emoji: 🖼️
+colorFrom: purple
+colorTo: pink
+sdk: docker
+pinned: false
+---
+
 # 🖼️ Image Restoration Studio
 
 <div align="center">

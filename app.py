@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, session, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, send_from_directory
 import os
 import json
 import uuid
@@ -8,13 +8,25 @@ import traceback
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from config import Config
-from backend.image_processor import RobustImageProcessor
-from backend.utils import ImageUtils
 
-# Initialize Flask app
+# Add current directory to path for imports
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Import backend modules
+try:
+    from backend.image_processor import RobustImageProcessor
+    from backend.utils import ImageUtils
+except ImportError as e:
+    print(f"Import Error: {e}")
+    print(f"Current directory: {os.getcwd()}")
+    print(f"Files in backend/: {os.listdir('backend') if os.path.exists('backend') else 'No backend folder'}")
+    raise
+
+# Initialize Flask app WITHOUT session
 app = Flask(__name__)
-app.config.from_object(Config)
-app.secret_key = os.environ.get('SECRET_KEY')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'imagerestoration924502@flaskapp')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 # Ensure directories exist
 Config.init_app(app)
@@ -23,24 +35,8 @@ Config.init_app(app)
 processor = RobustImageProcessor()
 utils = ImageUtils()
 
-def convert_numpy_types(obj):
-    """Convert numpy types to Python native types for JSON serialization"""
-    if isinstance(obj, np.integer):
-        return int(obj)
-    elif isinstance(obj, np.floating):
-        return float(obj)
-    elif isinstance(obj, np.bool_):
-        return bool(obj)
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, dict):
-        return {key: convert_numpy_types(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return [convert_numpy_types(item) for item in obj]
-    elif isinstance(obj, tuple):
-        return tuple(convert_numpy_types(item) for item in obj)
-    else:
-        return obj
+# Store active sessions in memory (will reset on restart)
+active_sessions = {}
 
 def clear_user_files(session_id):
     """Clean up all files associated with a session"""
@@ -58,21 +54,14 @@ def clear_user_files(session_id):
                     if session_id in file.name:
                         try:
                             file.unlink()
-                            print(f"Deleted: {file}")
                         except Exception as e:
                             print(f"Error deleting {file}: {e}")
     except Exception as e:
         print(f"Error cleaning files: {e}")
 
-
-
 @app.route('/')
 def index():
     """Home page - Upload image"""
-    # Clear previous session data
-    if 'session_id' in session:
-        clear_user_files(session['session_id'])
-    session.clear()
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
@@ -95,35 +84,43 @@ def upload():
         original_path = Config.RAW_UPLOAD_PATH / unique_filename
         file.save(original_path)
         
-        # Store session data
-        session['session_id'] = session_id
-        session['original_filename'] = original_filename
-        session['unique_filename'] = unique_filename
-        session['upload_time'] = datetime.now().isoformat()
-        session['page'] = 'editor'  # Track current page
+        # Store session data in memory
+        active_sessions[session_id] = {
+            'session_id': session_id,
+            'original_filename': original_filename,
+            'unique_filename': unique_filename,
+            'upload_time': datetime.now().isoformat()
+        }
         
+        # Return session_id in the redirect URL
         return jsonify({
             'success': True,
-            'redirect': url_for('editor'),
+            'redirect': f'/editor?session_id={session_id}',
             'session_id': session_id
         })
         
     except Exception as e:
+        print(f"Upload error: {e}")
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/editor')
 def editor():
     """Editor page - Mark damage areas and adjust settings"""
-    if 'session_id' not in session:
+    session_id = request.args.get('session_id')
+    
+    if not session_id or session_id not in active_sessions:
         return redirect(url_for('index'))
     
-    # Get image path for display - FIXED: Now uses correct endpoint
-    image_url = url_for('get_original_image', filename=session['unique_filename'])
+    session_data = active_sessions[session_id]
+    
+    # Get image path for display
+    image_url = url_for('get_original_image', filename=session_data['unique_filename'])
     
     return render_template('editor.html', 
                          image_url=image_url,
-                         filename=session['original_filename'],
-                         session_id=session['session_id'])
+                         filename=session_data['original_filename'],
+                         session_id=session_id)
 
 @app.route('/uploads/raw/<filename>')
 def get_original_image(filename):
@@ -143,16 +140,14 @@ def get_mask_image(filename):
 @app.route('/process', methods=['POST'])
 def process_image():
     """Process image with mask and settings"""
-    print("\n" + "="*60)
-    print("RECEIVED PROCESS REQUEST")
-    print("="*60)
-    
     try:
-        if 'session_id' not in session:
+        session_id = request.form.get('session_id')
+        
+        if not session_id or session_id not in active_sessions:
             return jsonify({'success': False, 'error': 'No active session'}), 400
         
-        session_id = session['session_id']
-        unique_filename = session['unique_filename']
+        session_data = active_sessions[session_id]
+        unique_filename = session_data['unique_filename']
         
         # Get parameters
         parameters = {}
@@ -160,71 +155,14 @@ def process_image():
             parameters = json.loads(request.form['parameters'])
         
         mask_data = None
-        mask_path = None
         
         # Parse mask data if provided
         if 'mask_data' in request.form and request.form['mask_data']:
             try:
                 mask_json = request.form['mask_data']
                 mask_data = json.loads(mask_json)
-                
-                print(f"Mask data received:")
-                print(f"  Points: {len(mask_data.get('coordinates', []))}")
-                print(f"  Brush size: {mask_data.get('brush_size', 20)}")
-                
-                # Create mask file
-                mask_filename = f"mask_{session_id}.png"
-                mask_path = Config.MASK_UPLOAD_PATH / mask_filename
-                
-                # Call mask creation function (you need to implement this in scratch_removal.py)
-                from backend.scratch_removal import AdvancedInpainter
-                inpainter = AdvancedInpainter()
-                
-                # Load original image to get dimensions
-                original_path = Config.RAW_UPLOAD_PATH / unique_filename
-                
-                # Create mask from coordinates
-                # Note: You need to implement create_mask_from_coordinates method in AdvancedInpainter
-                mask_created = False
-                try:
-                    # Try to use the create_mask_from_coordinates method if it exists
-                    mask_created = inpainter.create_mask_from_coordinates(
-                        original_path=str(original_path),
-                        coordinates=mask_data.get('coordinates', []),
-                        brush_size=mask_data.get('brush_size', 20),
-                        output_path=str(mask_path)
-                    )
-                except AttributeError:
-                    # Fallback to existing method
-                    import cv2
-                    from PIL import Image
-                    
-                    # Read original image to get dimensions
-                    img = cv2.imread(str(original_path))
-                    if img is not None:
-                        height, width = img.shape[:2]
-                        
-                        # Create blank mask
-                        mask = np.zeros((height, width), dtype=np.uint8)
-                        
-                        # Draw circles at coordinates
-                        for coord in mask_data.get('coordinates', []):
-                            x = int(coord['x'] * (width / mask_data.get('display_width', width)))
-                            y = int(coord['y'] * (height / mask_data.get('display_height', height)))
-                            brush_size = int(mask_data.get('brush_size', 20) * (width / mask_data.get('display_width', width)))
-                            cv2.circle(mask, (x, y), brush_size // 2, 255, -1)
-                        
-                        # Save mask
-                        Image.fromarray(mask).save(str(mask_path))
-                        mask_created = True
-                
-                if not mask_created:
-                    mask_path = None
-                    
             except Exception as e:
-                print(f"Error creating mask: {e}")
-                traceback.print_exc()
-                mask_path = None
+                print(f"Error parsing mask data: {e}")
         
         # Process image
         original_path = Config.RAW_UPLOAD_PATH / unique_filename
@@ -238,10 +176,10 @@ def process_image():
         result_path = Config.PROCESSED_PATH / result_filename
         utils.save_image(result['processed_image'], str(result_path), quality=95)
         
-        # Store result info in session
-        session['result_filename'] = result_filename
-        session['metrics'] = convert_numpy_types(result['metrics'])
-        session['page'] = 'results'  # Update current page
+        # Update session data
+        session_data['result_filename'] = result_filename
+        session_data['metrics'] = result['metrics']
+        active_sessions[session_id] = session_data
         
         # Convert to base64 for response
         original_base64 = utils.numpy_to_base64(result['original_image'])
@@ -251,19 +189,16 @@ def process_image():
             'success': True,
             'original_image': original_base64,
             'processed_image': processed_base64,
-            'metrics': session['metrics'],
+            'metrics': session_data['metrics'],
             'filename': result_filename,
-            'redirect': url_for('results'),
-            'mask_used': bool(mask_path and mask_path.exists())
+            'redirect': f'/results?session_id={session_id}',
+            'mask_used': bool(mask_data)
         }
-        
-        print(f"Processing successful! Redirecting to results page.")
-        print("="*60 + "\n")
         
         return jsonify(response_data)
         
     except Exception as e:
-        print(f"\nCRITICAL ERROR: {str(e)}")
+        print(f"Processing error: {e}")
         traceback.print_exc()
         return jsonify({
             'success': False,
@@ -273,28 +208,39 @@ def process_image():
 @app.route('/results')
 def results():
     """Results page - Display processed image"""
-    if 'session_id' not in session or 'result_filename' not in session:
+    session_id = request.args.get('session_id')
+    
+    if not session_id or session_id not in active_sessions:
         return redirect(url_for('index'))
     
-    # Get image URLs - FIXED: Using correct endpoints
-    original_url = url_for('get_original_image', filename=session['unique_filename'])
-    result_url = url_for('get_processed_image', filename=session['result_filename'])
+    session_data = active_sessions[session_id]
+    
+    if 'result_filename' not in session_data:
+        return redirect(url_for('index'))
+    
+    # Get image URLs
+    original_url = url_for('get_original_image', filename=session_data['unique_filename'])
+    result_url = url_for('get_processed_image', filename=session_data['result_filename'])
     
     return render_template('results.html',
                          original_url=original_url,
                          result_url=result_url,
-                         metrics=session.get('metrics', {}),
-                         filename=session['original_filename'],
-                         session_id=session['session_id'])
+                         metrics=session_data.get('metrics', {}),
+                         filename=session_data['original_filename'],
+                         session_id=session_id)
 
 @app.route('/download/<filename>')
 def download_image(filename):
     """Download processed image"""
     try:
-        if 'session_id' not in session or 'result_filename' not in session:
-            return redirect(url_for('index'))
+        session_id = request.args.get('session_id')
         
-        if session['result_filename'] != filename:
+        if not session_id or session_id not in active_sessions:
+            return "Access denied", 403
+        
+        session_data = active_sessions[session_id]
+        
+        if session_data.get('result_filename') != filename:
             return "Access denied", 403
         
         file_path = Config.PROCESSED_PATH / filename
@@ -305,7 +251,7 @@ def download_image(filename):
         return send_file(
             file_path,
             as_attachment=True,
-            download_name=f"restored_{session['original_filename']}"
+            download_name=f"restored_{session_data['original_filename']}"
         )
         
     except Exception as e:
@@ -314,26 +260,29 @@ def download_image(filename):
 @app.route('/back')
 def back():
     """Navigate back to previous page"""
-    if 'page' in session:
-        if session['page'] == 'results':
-            # Go back to editor
-            return redirect(url_for('editor'))
-        elif session['page'] == 'editor':
-            # Go back to upload
-            if 'session_id' in session:
-                clear_user_files(session['session_id'])
-            session.clear()
-            return redirect(url_for('index'))
+    session_id = request.args.get('session_id')
+    referrer = request.referrer
     
-    # Default fallback
+    if session_id:
+        if '/results' in str(referrer):
+            return redirect(f'/editor?session_id={session_id}')
+        elif '/editor' in str(referrer):
+            # Clean up files and remove session
+            if session_id in active_sessions:
+                clear_user_files(session_id)
+                active_sessions.pop(session_id, None)
+    
     return redirect(url_for('index'))
 
 @app.route('/reset')
 def reset():
     """Reset everything and go to home"""
-    if 'session_id' in session:
-        clear_user_files(session['session_id'])
-    session.clear()
+    session_id = request.args.get('session_id')
+    
+    if session_id and session_id in active_sessions:
+        clear_user_files(session_id)
+        active_sessions.pop(session_id, None)
+    
     return redirect(url_for('index'))
 
 @app.route('/about')
@@ -342,4 +291,5 @@ def about():
     return render_template('about.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)

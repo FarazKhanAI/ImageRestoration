@@ -69,20 +69,24 @@ class AdvancedInpainter:
         
         self.debug_print(f"Mask created: {np.sum(mask > 0)} white pixels")
         
-
-        # Create timestamp for unique filename
+        # Save mask to instance/uploads/masks directory
+        import os
+        from pathlib import Path
+        
+        # Create masks directory if it doesn't exist
+        masks_dir = Path("instance/uploads/masks")
+        masks_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Save mask
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         mask_filename = f"mask_{timestamp}_{np.random.randint(1000,9999)}.png"
-        mask_save_path = r"F:\DIP_project\image-restoration-app\instance\uploads\masks" + "\\" + mask_filename
-
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(mask_save_path), exist_ok=True)
-
+        mask_save_path = masks_dir / mask_filename
+        
         # Save the mask
-        cv2.imwrite(mask_save_path, mask)
+        cv2.imwrite(str(mask_save_path), mask)
         print(f"Mask saved to: {mask_save_path}")
+        
         return mask
-    
    
 
 
