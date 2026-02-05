@@ -1,305 +1,251 @@
----
-title: Image Restoration Studio
-emoji: 🖼️
-colorFrom: purple
-colorTo: pink
-sdk: docker
-pinned: false
----
-
 # 🖼️ Image Restoration Studio
 
 <div align="center">
 
-[![Flask](https://img.shields.io/badge/Flask-3.0.0-000000?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.8.1-5C3EE8?style=for-the-badge&logo=opencv)](https://opencv.org/)
-[![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Active-2ecc71?style=for-the-badge)]()
+[![Flask](https://img.shields.io/badge/Flask-3.0.0-black?logo=flask)](https://flask.palletsprojects.com/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8.1-blue?logo=opencv)](https://opencv.org/)
+[![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)](https://python.org)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker)](https://docker.com)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/🚀-Live%20Demo-orange)](https://huggingface.co/spaces/Zoro828/imageRestoration)
 
-**Professional-grade image restoration with multi-algorithm inpainting**
+**Restore damaged photos with precision - Remove scratches, stains, and imperfections**
 
-• [Report Bug](https://github.com/FarazKhanAI/ImageRestoration/issues) • [Request Feature](https://github.com/FarazKhanAI/ImageRestoration/issues)
-
-<img src="https://github.com/FarazKhanAI/ImageRestoration/blob/main/demo.gif?raw=true" width="600" alt="Image Restoration Demo">
+*A project by UEAS Swat Computer Systems Engineering students*
 
 </div>
 
-## 🎯 What It Does
+## 🌟 Live Demo
 
-Restore damaged photos with AI-powered precision. Remove scratches, blemishes, and unwanted objects while preserving original details and colors.
+**Try it now for free:** [https://huggingface.co/spaces/Zoro828/imageRestoration](https://huggingface.co/spaces/Zoro828/imageRestoration)
 
-### ✨ **Key Features**
-- ✅ **Multi-Algorithm Inpainting** - Combines Telea, Navier-Stokes, and hybrid methods
-- ✅ **Smart Mask Processing** - Feathering and edge-aware mask creation
-- ✅ **Color Preservation** - Maintains original color consistency
-- ✅ **Fast Processing** - 2-10 seconds for most images
-- ✅ **Batch Processing** - Automatically saves masks and results
 
-## 🚀 **Get Started in 2 Minutes**
 
-### **Prerequisites**
-- Python 3.10 or higher
-- Git (optional)
+## 📖 About The Project
 
-### **Installation**
+**Image Restoration Studio** is a web application that helps you restore old or damaged photos. Using image processing algorithms, it can remove scratches, stains, watermarks, and other imperfections while preserving the original details and colors.
 
+This project was developed as part of our studies at the **University of Engineering and Applied Sciences Swat (UEAS Swat)** in the **Department of Computer Systems Engineering (DCSE)**.
+
+### ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **🖌️ Smart Brush Tool** | Interactive canvas for marking damage areas with adjustable brush size |
+| **⚡ Fast Processing** | Restores images in 2-10 seconds using optimized algorithms |
+| **🎯 Multiple Algorithms** | Choose between Telea (fast), Navier-Stokes (quality), or Hybrid methods |
+| **🌈 Color Preservation** | Maintains original color consistency during restoration |
+| **📱 Responsive Design** | Works perfectly on desktop, tablet, and mobile devices |
+| **🎨 Built-in Editor** | Adjust brightness, contrast, saturation after processing |
+| **🌓 Dark/Light Mode** | Choose your preferred theme for comfortable editing |
+
+## 🚀 Quick Start
+
+### Option 1: Use Online 
+1. Visit **[https://huggingface.co/spaces/Zoro828/imageRestoration](https://huggingface.co/spaces/Zoro828/imageRestoration)**
+2. Upload your damaged image
+3. Mark the scratches or imperfections
+4. Click "Process & Restore Image"
+5. Download your restored photo
+
+### Option 2: Run Locally
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/FarazKhanAI/ImageRestoration.git
 cd ImageRestoration
 
-# 2. Create virtual environment (optional but recommended)
-python -m venv venv
-
-# 3. Activate environment
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# 4. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the application
+python app.py
+
+# Open http://localhost:5000 in your browser
+```
+
+### Option 3: Run with Docker
+```bash
+# Build Docker image
+docker build -t image-restoration .
+
+# Run container
+docker run -p 5000:5000 image-restoration
+```
+
+## 📸 How to Use
+
+### Step 1: Upload Your Image
+- Click "Upload Your Image" or drag & drop
+- Supported formats: JPG, PNG, BMP, TIFF
+- Maximum file size: 16MB
+
+### Step 2: Mark Damage Areas
+- Marking damage areas
+- Use the brush tool to mark scratches or imperfections
+- Adjust brush size using the slider (5-100px)
+- Undo mistakes with Ctrl+Z or the Undo button
+- Clear all marks if needed
+
+### Step 3: Choose Restoration Settings
+| Setting | Description | Recommended |
+|---------|-------------|-------------|
+| **Inpainting Method** | Algorithm for restoration | Hybrid (Best results) |
+| **Brush Size** | Size of the marking brush | 20-40px (adjust as needed) |
+| **Inpainting Radius** | How far to search for replacement pixels | 3-5px |
+
+### Step 4: Process & Download
+- Click "Process & Restore Image" (takes 2-10 seconds)
+- View side-by-side comparison of original and restored
+- Use image editor to adjust final result (optional)
+- Download your restored image in high quality
+
+## 📁 Project Structure
+
+```
+image-restoration-app/
+├── 📄 app.py                    # Main Flask application
+├── 📄 config.py                # Configuration settings
+├── 📄 Dockerfile               # Docker configuration
+├── 📄 requirements.txt         # Python dependencies
+├── 📄 .env                     # Environment variables
+│
+├── 📁 backend/                 # Core image processing
+│   ├── 📄 image_processor.py   # Main processing pipeline
+│   ├── 📄 scratch_removal.py   # Inpainting algorithms
+│   ├── 📄 utils.py            # Helper functions
+│   ├── 📄 enhancement.py      # Color adjustments
+│   └── 📄 validators.py       # Input validation
+│
+├── 📁 templates/              # HTML templates
+│   ├── 📄 base.html          # Base layout with navigation
+│   ├── 📄 index.html         # Upload page
+│   ├── 📄 editor.html        # Image editor with canvas
+│   ├── 📄 results.html       # Results comparison
+│   └── 📄 about.html         # Project information
+│
+├── 📁 static/                # Web assets
+│   ├── 📁 css/              # Stylesheets
+│   ├── 📁 js/               # JavaScript files
+│   └── 📁 images/           # Icons and logos
+│
+└── 📁 instance/             # User data (created automatically)
+    ├── 📁 uploads/raw/      # Original uploaded images
+    ├── 📁 uploads/masks/    # Generated mask images
+    └── 📁 processed/        # Restored output images
+```
+
+## 🔧 Technical Details
+
+### Tech Stack
+- **Backend**: Flask 3.0, OpenCV 4.8, NumPy 1.24, Pillow 10.1
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript, Canvas API
+- **Deployment**: Docker, Hugging Face Spaces, Gunicorn
+- **Algorithms**: Telea Inpainting, Navier-Stokes Inpainting, Hybrid Approach
+
+### Image Processing Pipeline
+```
+1. Upload → Validate → Resize if needed
+2. Convert coordinates to mask → Apply feathering
+3. Select algorithm → Apply inpainting
+4. Color correction → Post-processing
+5. Save result → Generate comparison
+6. Cleanup temporary files
+```
+
+### Performance Metrics
+| Image Size | Processing Time | Memory Usage |
+|------------|----------------|--------------|
+| 800×600 | 1-3 seconds | ~50MB |
+| 1920×1080 | 3-7 seconds | ~100MB |
+| 4000×3000 | 7-15 seconds | ~200MB |
+
+## 🎓 Team
+
+### Project Members
+- **Faraz Khan** 
+- **Gul-e-Rana**   
+- **Jawad Khan** 
+
+### Institution
+**University of Engineering and Applied Sciences Swat (UEAS Swat)**  
+**Department of Computer Systems Engineering (DCSE)**  
+
+*This project was developed as part of our coursework in Digital Image Processing.*
+
+## 🌍 Deployment
+
+### Deployed on Hugging Face
+Our application is live on Hugging Face Spaces:
+- **URL**: [https://huggingface.co/spaces/Zoro828/imageRestoration](https://huggingface.co/spaces/Zoro828/imageRestoration)
+- **SDK**: Docker
+- **Hardware**: CPU Basic
+- **Auto-deploy**: Enabled on Git push
+
+### Self-hosting Instructions
+```bash
+# 1. Clone repository
+git clone https://github.com/FarazKhanAI/ImageRestoration.git
+
+# 2. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set environment variables
+cp .env.example .env
+# Edit .env with your settings
 
 # 5. Run the application
 python app.py
 ```
 
-**Open your browser and visit:** `http://localhost:5000`
+## 🤝 Contributing
 
-## 📖 **How to Use**
-
-### **Step 1: Upload Image**
-- Drag & drop your image or click to browse
-- Supports JPG, PNG, BMP, TIFF (up to 16MB)
-
-### **Step 2: Mark Damage Areas**
-- Use the brush tool to mark scratches, stains, or objects
-- Adjust brush size with the slider
-- Use Undo/Clear if needed
-
-### **Step 3: Adjust Parameters**
-- **Inpainting Method**: 
-  - `Fast (Telea)` - Quick restoration
-  - `Quality (Navier-Stokes)` - Better for textures
-  - `Hybrid` - Best overall (recommended)
-- **Brush Size**: 5-100px
-- **Inpainting Radius**: 1-20px
-
-### **Step 4: Process & Download**
-- Click "Process & Restore Image"
-- View before/after comparison
-- Download restored image in high quality
-
-## 🏗️ **Technical Architecture**
-
-### **Backend Stack**
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Web Framework** | Flask 3.0 | REST API & routing |
-| **Image Processing** | OpenCV 4.8 | Core inpainting algorithms |
-| **Performance** | Numba | JIT compilation for speed |
-| **Math Operations** | NumPy | Matrix operations |
-| **Image I/O** | Pillow | Image format handling |
-
-### **Processing Pipeline**
-```
-1. Image Upload → Validation → Resize
-2. Mask Creation → Feathering → Dilation
-3. Inpainting Selection → Algorithm execution
-4. Color Correction → Post-processing
-5. Result Generation → Metrics calculation
-```
-
-## 📁 **Project Structure**
-
-```
-image-restoration-app/
-├── app.py                    # Main Flask application
-├── config.py                # Configuration settings
-├── requirements.txt         # Python dependencies
-│
-├── backend/                 # Core processing logic
-│   ├── image_processor.py   # Main processing pipeline
-│   ├── scratch_removal.py   # Advanced inpainting algorithms
-│   ├── utils.py            # Helper functions (mask creation, I/O)
-│   ├── enhancement.py      # Color adjustments (optional)
-│   └── validators.py       # Input validation
-│
-├── templates/               # Frontend HTML
-│   ├── base.html           # Base layout
-│   └── index.html          # Main interface
-│
-├── static/                  # Web assets
-│   ├── css/style.css       # Styling
-│   └── js/main.js          # Interactive features
-│
-└── instance/               # User data (not in git)
-    ├── uploads/raw/        # Original uploaded images
-    ├── uploads/masks/      # Generated mask images
-    └── processed/          # Restored output images
-```
-
-## 🧠 **Advanced Inpainting Algorithms**
-
-### **Multi-Algorithm Strategy**
-The system intelligently selects the best algorithm based on damage size:
-
-| Damage Size | Algorithm Used | Processing Time | Best For |
-|-------------|----------------|-----------------|----------|
-| **Small** (<1%) | Fast Telea | <2 seconds | Scratches, spots |
-| **Medium** (1-10%) | Navier-Stokes | 2-5 seconds | Textured areas |
-| **Large** (>10%) | Hybrid Approach | 5-15 seconds | Large object removal |
-
-### **Key Technical Improvements**
-1. **Edge Preservation** - Uses Canny edge detection to protect boundaries
-2. **Color Matching** - Adjusts inpainted colors to match surroundings
-3. **Multi-Scale Processing** - Handles different damage sizes optimally
-4. **Soft Mask Blending** - Feathering prevents visible seams
-
-## ⚡ **Performance & Optimization**
-
-### **Processing Times**
-| Image Resolution | Mask Size | Processing Time |
-|------------------|-----------|-----------------|
-| 800×600 | Small | 1-3 seconds |
-| 1920×1080 | Medium | 3-7 seconds |
-| 4000×3000 | Large | 7-15 seconds |
-
-### **Memory Usage**
-- **Minimal footprint**: ~100MB for typical images
-- **Auto-resizing**: Large images automatically scaled to 2000px max dimension
-- **Efficient cleanup**: Temporary files removed after processing
-
-## 🚢 **Deployment Options**
-
-### **Option 1: Local Development**
-```bash
-python app.py
-# Runs on http://localhost:5000 with debug mode
-```
-
-### **Option 2: Production with Gunicorn**
-```bash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
-
-### **Option 3: Free Cloud Deployment**
-#### **Render.com** (Recommended)
-1. Connect your GitHub repository
-2. Set build command: `pip install -r requirements.txt`
-3. Set start command: `python app.py`
-4. Get free HTTPS and auto-deploy
-
-#### **PythonAnywhere**
-1. Upload files via web interface
-2. Configure WSGI file
-3. Free tier available (limited)
-
-## 🔧 **Configuration**
-
-### **Environment Variables**
-Create `.env` file for production:
-```env
-SECRET_KEY=your-secret-key-here
-MAX_CONTENT_LENGTH=16777216  # 16MB
-DEBUG=False
-```
-
-### **Directory Setup**
-The application automatically creates:
-```
-instance/              # Created automatically
-├── uploads/raw/      # Original images
-├── uploads/masks/    # Mask images (saved here!)
-└── processed/        # Final results
-```
-
-## 🐛 **Troubleshooting**
-
-### **Common Issues & Solutions**
-
-| Issue | Solution |
-|-------|----------|
-| **Mask not appearing** | Check browser console for errors, ensure you're drawing on the canvas |
-| **Processing too slow** | Reduce image size before uploading (max 2000px recommended) |
-| **Color mismatch** | Try the "Hybrid" inpainting method for better color preservation |
-| **Blank results** | Check server logs for errors, verify image format is supported |
-
-### **Debug Mode**
-Enable debug logging by setting `DEBUG = True` in `app.py`:
-```python
-# In app.py
-DEBUG = True
-```
-
-## 🤝 **Contributing**
-
-We welcome contributions! Here's how to help:
+We welcome contributions! Here's how you can help:
 
 1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/improvement`)
-3. **Commit** your changes (`git commit -m 'Add some improvement'`)
-4. **Push** to the branch (`git push origin feature/improvement`)
-5. **Open** a Pull Request
+2. **Create a feature branch** (`git checkout -b feature/AmazingFeature`)
+3. **Commit your changes** (`git commit -m 'Add some AmazingFeature'`)
+4. **Push to the branch** (`git push origin feature/AmazingFeature`)
+5. **Open a Pull Request**
 
-### **Development Setup**
+### Development Setup
 ```bash
-# Clone and setup
-git clone https://github.com/FarazKhanAI/ImageRestoration.git
-cd ImageRestoration
+# Install development dependencies
 pip install -r requirements.txt
 
-# Run tests
-python -m pytest tests/
-
-# Format code
-black .
+# Run in development mode
+export FLASK_ENV=development
+python app.py
 ```
 
-## 📄 **License**
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📧 **Support & Contact**
+## 🙏 Acknowledgments
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/FarazKhanAI/ImageRestoration/issues)
-- **Email**: [Your email or project email]
-- **Project Link**: [https://github.com/FarazKhanAI/ImageRestoration](https://github.com/FarazKhanAI/ImageRestoration)
+We would like to thank:
+- **UEAS Swat Faculty** for guidance and support
+- **OpenCV Community** for the powerful computer vision library
+- **Flask Team** for the lightweight web framework
+- **Hugging Face** for providing free hosting on Spaces
 
-## 🙏 **Acknowledgments**
+## 🔗 Useful Links
 
-Special thanks to:
-- **OpenCV Team** - For the incredible computer vision library
-- **Flask Community** - For the lightweight web framework
-- **All Contributors** - Who help improve this project
+- **Live Demo**: [https://huggingface.co/spaces/Zoro828/imageRestoration](https://huggingface.co/spaces/Zoro828/imageRestoration)
+- **Source Code**: [https://github.com/FarazKhanAI/ImageRestoration](https://github.com/FarazKhanAI/ImageRestoration)
+- **Issue Tracker**: [https://github.com/FarazKhanAI/ImageRestoration/issues](https://github.com/FarazKhanAI/ImageRestoration/issues)
 
 ---
 
 <div align="center">
 
-### **Ready to restore your images?**
-[Get Started Now](#-get-started-in-2-minutes) | [View Demo](#)
+### ✨ **Ready to restore your memories?**
+**[Try it now →](https://huggingface.co/spaces/Zoro828/imageRestoration)**
 
-Made with ❤️ using Flask & OpenCV
+*Made with ❤️ by UEAS Swat DCSE students*
 
 </div>
-
-## 📚 **Next Steps**
-
-### **Planned Improvements**
-- [ ] **Batch Processing** - Restore multiple images at once
-- [ ] **AI Enhancement** - Add deep learning models for better results
-- [ ] **Mobile App** - iOS/Android companion apps
-- [ ] **Cloud Storage** - Google Drive/Dropbox integration
-
-### **Frontend Updates** (Coming Soon)
-- Dark mode toggle
-- More brush styles and shapes
-- Real-time preview while drawing
-- Advanced comparison slider
-
----
-
-**Tip**: For best results, use high-quality source images and mark damage areas precisely with appropriate brush size.
