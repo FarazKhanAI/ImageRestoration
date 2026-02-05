@@ -25,7 +25,7 @@ except ImportError as e:
 
 # Initialize Flask app WITHOUT session
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'imagerestoration924502@flaskapp')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 # Ensure directories exist
